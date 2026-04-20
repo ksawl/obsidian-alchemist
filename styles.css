@@ -1,0 +1,17 @@
+/* Alchemist Styles */
+
+.alchemist-export-btn {
+    opacity: 0.6;
+    transition: opacity 0.2s ease-in-out;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px;
+    cursor: pointer;
+}
+
+.alchemist-export-btn:hover {
+    opacity: 1;
+    background: var(--interactive-accent-hover);
+}
