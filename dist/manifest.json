@@ -5,6 +5,6 @@
   "minAppVersion": "0.15.0",
   "description": "Modular super-plugin for TextBundle, Audio conversion, and Dataview exports.",
   "author": "Kharizma & Latreia",
-  "authorUrl": "https://github.com/bonifat",
+  "authorUrl": "https://github.com/ksawl",
   "isDesktopOnly": true
 }
