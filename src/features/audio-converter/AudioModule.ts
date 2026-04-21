@@ -1,4 +1,4 @@
-import { TFile, Notice, normalizePath, FileSystemAdapter } from 'obsidian';
+import { TFile, TFolder, Notice, normalizePath, FileSystemAdapter } from 'obsidian';
 import { spawn } from 'child_process';
 import { IAlchemistModule, AlchemistContext } from '../../core/IAlchemistModule';
 import { AlchemistSettings } from '../../../settings';
@@ -25,46 +25,75 @@ export class AudioModule implements IAlchemistModule {
     }
 
     private registerEvents() {
-        // Single file menu
+        const audioExtensions = ['webm', 'ogg', 'wav', 'mp3', 'm4a', 'flac', 'aac', 'opus', 'mp4', 'mov', 'mkv', 'avi'];
+
+        // Handler for single file or folder
         this.context.plugin.registerEvent(
             this.context.app.workspace.on('file-menu', (menu: any, abstractFile: any) => {
                 if (!this.context.settings.enableAudioConverter) return;
-                const format = this.context.settings.defaultAudioOutputFormat || 'mp3';
-                
+                const format = (this.context.settings.defaultAudioOutputFormat || 'mp3').toLowerCase();
+
+                let audioFiles: TFile[] = [];
+
                 if (abstractFile instanceof TFile) {
                     const ext = abstractFile.extension.toLowerCase();
-                    const audioExtensions = ['webm', 'ogg', 'wav', 'mp3', 'm4a', 'flac', 'aac', 'opus'];
-                    
                     if (audioExtensions.includes(ext) && ext !== format) {
-                        menu.addItem((item: any) => {
-                            item
-                                .setTitle(`Alchemist: Convert to ${format.toUpperCase()}`)
-                                .setIcon('music')
-                                .onClick(() => this.runConversion([abstractFile], format));
-                        });
+                        audioFiles.push(abstractFile);
                     }
+                } else if (abstractFile instanceof TFolder) {
+                    const collect = (f: any) => {
+                        if (f instanceof TFile) {
+                            const ext = f.extension.toLowerCase();
+                            if (audioExtensions.includes(ext) && ext !== format) {
+                                audioFiles.push(f);
+                            }
+                        } else if (f instanceof TFolder) {
+                            f.children.forEach((child: any) => collect(child));
+                        }
+                    };
+                    collect(abstractFile);
                 }
+
+                if (audioFiles.length === 0) return;
+
+                menu.addItem((item: any) => {
+                    const title = audioFiles.length === 1 
+                        ? `Alchemist: Convert to ${format.toUpperCase()}` 
+                        : `Alchemist: Convert folder (${audioFiles.length} files) to ${format.toUpperCase()}`;
+                    
+                    item
+                        .setTitle(title)
+                        .setIcon('music')
+                        .onClick(() => this.runConversion(audioFiles, format));
+                });
             })
         );
 
-        // Multiple files menu
+        // Handler for multiple selection
         this.context.plugin.registerEvent(
             this.context.app.workspace.on('files-menu', (menu: any, files: any[]) => {
                 if (!this.context.settings.enableAudioConverter) return;
-                const audioExtensions = ['webm', 'ogg', 'wav', 'mp3', 'm4a', 'flac', 'aac', 'opus'];
-                const audioFiles = files.filter(f => f instanceof TFile && audioExtensions.includes(f.extension.toLowerCase()) && f.extension.toLowerCase() !== format);
-                if (audioFiles.length <= 1) return;
+                const format = (this.context.settings.defaultAudioOutputFormat || 'mp3').toLowerCase();
 
-                const format = this.context.settings.defaultAudioOutputFormat || 'mp3';
+                const audioFiles = files.filter(f => 
+                    f instanceof TFile && 
+                    audioExtensions.includes(f.extension.toLowerCase()) && 
+                    f.extension.toLowerCase() !== format
+                ) as TFile[];
+
+                if (audioFiles.length <= 1) return; // Single file handled by file-menu
+
                 menu.addItem((item: any) => {
                     item
-                        .setTitle(`Alchemist: Convert ${audioFiles.length} files to ${format.toUpperCase()}`)
+                        .setTitle(`Alchemist: Convert selected (${audioFiles.length} files) to ${format.toUpperCase()}`)
                         .setIcon('music')
                         .onClick(() => this.runConversion(audioFiles, format));
                 });
             })
         );
     }
+
+
 
     private async runConversion(files: TFile[], format: string) {
         if (files.length === 0) return;
@@ -122,7 +151,10 @@ export class AudioModule implements IAlchemistModule {
                 if (frontmatter.artist) metadata.artist = frontmatter.artist;
                 if (frontmatter.album) metadata.album = frontmatter.album;
                 if (frontmatter.genre) metadata.genre = frontmatter.genre;
+                
+                // Date logic: date > creation_date > now
                 if (frontmatter.date) metadata.date = String(frontmatter.date);
+                else if (frontmatter.creation_date) metadata.date = String(frontmatter.creation_date);
                 
                 // Fallback for tags -> genre
                 if (!frontmatter.genre && frontmatter.tags) {
@@ -130,7 +162,15 @@ export class AudioModule implements IAlchemistModule {
                     if (tags.length > 0) metadata.genre = tags[0];
                 }
             }
+
+            // H1 Fallback for title
+            if (!frontmatter?.title) {
+                const content = await this.context.app.vault.read(mdFile);
+                const h1Match = content.match(/^#\s+(.+)$/m);
+                if (h1Match) metadata.title = h1Match[1].trim();
+            }
         }
+
 
         return metadata;
     }

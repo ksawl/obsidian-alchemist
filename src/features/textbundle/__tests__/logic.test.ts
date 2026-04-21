@@ -1,14 +1,18 @@
 import { transformMarkdownLinks, LinkResolver } from '../logic';
 
+// Note: reverseTransformLinks will be moved to logic.ts soon, but for now we test transform
 describe('TextBundle Logic: transformMarkdownLinks', () => {
     const mockResolver: LinkResolver = {
         resolveAsset: (link: string) => {
             if (link === 'image.png') return 'image.png';
+            if (link === 'Обучение.md') return null; // .md is NOT an asset
             if (link === 'photo') return 'real_photo.jpg';
+            if (link === 'документ.pdf') return 'документ.pdf';
             return null;
         },
         resolveNote: (link: string) => {
             if (link === 'Other Note') return '../Other Note.textbundle/text.md';
+            if (link === 'Обучение') return '../Обучение.textbundle/text.md';
             return null;
         }
     };
@@ -19,26 +23,28 @@ describe('TextBundle Logic: transformMarkdownLinks', () => {
         expect(transformMarkdownLinks(input, mockResolver)).toBe(expected);
     });
 
-    it('should transform embeds with aliases', () => {
-        const input = 'Check this out: ![[photo|My Cool Photo]]';
-        const expected = 'Check this out: ![My Cool Photo](assets/real_photo.jpg)';
+    it('should handle Cyrillic in assets', () => {
+        const input = 'См. ![[документ.pdf]]';
+        const expected = 'См. ![документ.pdf](assets/документ.pdf)';
         expect(transformMarkdownLinks(input, mockResolver)).toBe(expected);
     });
 
-    it('should transform regular links to assets', () => {
-        const input = 'Download [[image.png]]';
-        const expected = 'Download [image.png](assets/image.png)';
+    it('should transform links to other notes (even with Cyrillic)', () => {
+        const input = 'Перейти к [[Обучение]]';
+        const expected = 'Перейти к [Обучение](../Обучение.textbundle/text.md)';
         expect(transformMarkdownLinks(input, mockResolver)).toBe(expected);
     });
 
-    it('should transform links to other notes in TextPack', () => {
-        const input = 'See [[Other Note]]';
-        const expected = 'See [Other Note](../Other Note.textbundle/text.md)';
+    it('should handle aliases correctly', () => {
+        const input = 'Check [[photo|This cool pic]]';
+        const expected = 'Check [This cool pic](assets/real_photo.jpg)';
         expect(transformMarkdownLinks(input, mockResolver)).toBe(expected);
     });
 
-    it('should not transform unknown links', () => {
-        const input = 'See [[Unknown Note]] and ![[unknown.png]]';
+    it('should not transform .md files as assets (bug check)', () => {
+        const input = 'Lesson [[Обучение.md]]';
+        // It should NOT be [Обучение.md](assets/Обучение.md) if it's not resolved as note or asset
         expect(transformMarkdownLinks(input, mockResolver)).toBe(input);
     });
 });
+

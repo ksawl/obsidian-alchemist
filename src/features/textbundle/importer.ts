@@ -2,6 +2,7 @@ import { App, TFile, TFolder, normalizePath, Notice } from 'obsidian';
 import * as fflate from 'fflate';
 import { AlchemistSettings } from '../../../settings';
 import { ISystemAdapter } from '../../core/IAlchemistModule';
+import { reverseTransformLinks } from './logic';
 
 export class TextBundleImporter {
     app: App;
@@ -93,8 +94,9 @@ export class TextBundleImporter {
         }
 
         await this.ensureFolder(finalImportFolder);
-        // Put assets in a central "media" folder within the import root (or relative root)
-        const attachmentFolderPath = normalizePath(`${finalImportFolder}/media`);
+        // Put assets in a central "assets" folder within the import root (or relative root)
+        const assetsFolderName = 'assets';
+        const attachmentFolderPath = normalizePath(`${finalImportFolder}/${assetsFolderName}`);
         await this.ensureFolder(attachmentFolderPath);
 
         const assetsBase = 'assets/';
@@ -113,13 +115,13 @@ export class TextBundleImporter {
         }
 
         // 3. Link Restoration
-        content = this.reverseTransformLinks(content);
+        content = reverseTransformLinks(content, assetsFolderName);
         
         for (const [oldName, newName] of assetRenameMap.entries()) {
             const escapedOldName = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const linkRegex = new RegExp(`\\[\\[media/${escapedOldName}(\\|[^\\]]+)?\\]\\]`, 'g');
+            const linkRegex = new RegExp(`\\[\\[${assetsFolderName}/${escapedOldName}(\\|[^\\]]+)?\\]\\]`, 'g');
             content = content.replace(linkRegex, (match, alias) => {
-                return `[[media/${newName}${alias || ''}]]`;
+                return `[[${assetsFolderName}/${newName}${alias || ''}]]`;
             });
         }
 
@@ -206,28 +208,5 @@ export class TextBundleImporter {
     private getAttachmentFolder(): string {
         return (this.app.vault as any).getConfig?.('attachmentFolderPath') || '';
     }
-
-    private reverseTransformLinks(content: string): string {
-        // 1. Embeds: ![alt](assets/filename) -> ![[media/filename|alt]]
-        content = content.replace(/!\[([^\]]*)\]\(assets\/([^\)]+)\)/g, (match, alt, filename) => {
-            return alt ? `![[media/${filename}|${alt}]]` : `![[media/${filename}]]`;
-        });
-
-        // 2. Links: [text](assets/filename) -> [[media/filename|text]]
-        content = content.replace(/\[([^\]]+)\]\(assets\/([^\)]+)\)/g, (match, text, filename) => {
-            return text === filename ? `[[media/${filename}]]` : `[[media/${filename}|${text}]]`;
-        });
-
-        // 3. Cross-Bundle Links: [Label](../BundleName.textbundle/text.md) -> [[NoteName|Label]]
-        content = content.replace(/\[([^\]]+)\]\(\.\.\/([^/]+)\/text\.(md|markdown|txt)\)/g, (match, text, folderName) => {
-            const decodedBundle = decodeURIComponent(folderName);
-            const bundleBase = decodedBundle.replace(/\.textbundle$/i, '');
-            // Handle collision suffixes like "Note (1)"
-            const noteName = bundleBase.replace(/ \(\d+\)$/, '');
-            
-            return text === noteName ? `[[${noteName}]]` : `[[${noteName}|${text}]]`;
-        });
-
-        return content;
-    }
 }
+

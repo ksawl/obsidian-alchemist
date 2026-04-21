@@ -1,7 +1,7 @@
 {
   "id": "obsidian-alchemist",
   "name": "Alchemist",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minAppVersion": "0.15.0",
   "description": "Modular super-plugin for TextBundle, Audio conversion, and Dataview exports.",
   "author": "Kharizma & Latreia",

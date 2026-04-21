@@ -6,15 +6,18 @@ Alchemist is a modular super-plugin designed for seamless data transmutation and
 
 ### TextBundle Export/Import
 Preserve the sovereignty of your data. Export your notes with all linked assets (images, audio, PDFs) into a standardized .textbundle or .textpack format. Perfect for sharing notes with other apps or creating portable backups.
-- Recursion Depth: Include linked notes up to 5 levels deep.
-- Conflict Resolution: Smart hashing to detect identical files and avoid duplicates.
-- TextPack Support: Compressed multi-note archives.
+- **Link Symmetry**: Ensuring links work perfectly after export and subsequent import back to Obsidian.
+- **Recursion Depth**: Include linked notes up to 5 levels deep.
+- **Conflict Resolution**: Smart hashing to detect identical files and avoid duplicates.
+- **TextPack Support**: Compressed multi-note archives.
 
 ### Audio Converter (Desktop Only)
-Transform your voice recordings into high-quality MP3s or FLACs without leaving Obsidian.
-- Meta-Sync: Automatically extracts ID3 tags (Title, Artist, Date, Genre) from the note's YAML frontmatter.
-- Cleanup: Option to delete the original heavy .webm files after successful conversion.
-- FFmpeg Powered: Uses the industry-standard FFmpeg engine for crystal-clear quality.
+Transform your voice recordings and video notes into high-quality MP3s or FLACs without leaving Obsidian.
+- **Video Extraction**: Extract high-quality audio from MP4, MOV, MKV, and AVI containers.
+- **Bulk & Folder Conversion**: Convert entire folders or multiple selected files in one click via the context menu.
+- **Meta-Sync+**: Automatically extracts ID3 tags (Title, Artist, Date, Genre) from YAML frontmatter, with fallbacks to note H1 headings and creation dates.
+- **Cleanup**: Option to delete original files after successful conversion.
+- **FFmpeg Powered**: Uses the industry-standard FFmpeg engine for crystal-clear quality.
 
 ### Dataview Table Export
 Turn your dynamic Dataview queries into static, shareable CSV files with a single click.

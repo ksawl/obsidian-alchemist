@@ -1431,6 +1431,25 @@ function transformMarkdownLinks(content, resolver) {
   });
   return content;
 }
+function reverseTransformLinks(content, assetsFolder) {
+  const assetsPrefix = "assets/";
+  const targetPrefix = assetsFolder ? `${assetsFolder}/` : "";
+  content = content.replace(/!\[([^\]]*)\]\(assets\/([^\)]+)\)/g, (match, alt, filename) => {
+    const isRedundant = alt === filename;
+    return alt && !isRedundant ? `![[${targetPrefix}${filename}|${alt}]]` : `![[${targetPrefix}${filename}]]`;
+  });
+  content = content.replace(/\[([^\]]+)\]\(assets\/([^\)]+)\)/g, (match, text, filename) => {
+    const isRedundant = text === filename;
+    return text && !isRedundant ? `[[${targetPrefix}${filename}|${text}]]` : `[[${targetPrefix}${filename}]]`;
+  });
+  content = content.replace(/\[([^\]]+)\]\(\.\.\/([^/]+)\/text\.(md|markdown|txt)\)/g, (match, text, folderName) => {
+    const decodedBundle = decodeURIComponent(folderName);
+    const bundleBase = decodedBundle.replace(/\.textbundle$/i, "");
+    const noteName = bundleBase.replace(/ \(\d+\)$/, "");
+    return text === noteName ? `[[${noteName}]]` : `[[${noteName}|${text}]]`;
+  });
+  return content;
+}
 
 // src/features/textbundle/packer.ts
 var TextBundlePacker = class {
@@ -1600,7 +1619,8 @@ var TextBundleImporter = class {
       }
     }
     await this.ensureFolder(finalImportFolder);
-    const attachmentFolderPath = (0, import_obsidian4.normalizePath)(`${finalImportFolder}/media`);
+    const assetsFolderName = "assets";
+    const attachmentFolderPath = (0, import_obsidian4.normalizePath)(`${finalImportFolder}/${assetsFolderName}`);
     await this.ensureFolder(attachmentFolderPath);
     const assetsBase = "assets/";
     const assetRenameMap = /* @__PURE__ */ new Map();
@@ -1613,12 +1633,12 @@ var TextBundleImporter = class {
         }
       }
     }
-    content = this.reverseTransformLinks(content);
+    content = reverseTransformLinks(content, assetsFolderName);
     for (const [oldName, newName] of assetRenameMap.entries()) {
       const escapedOldName = oldName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const linkRegex = new RegExp(`\\[\\[media/${escapedOldName}(\\|[^\\]]+)?\\]\\]`, "g");
+      const linkRegex = new RegExp(`\\[\\[${assetsFolderName}/${escapedOldName}(\\|[^\\]]+)?\\]\\]`, "g");
       content = content.replace(linkRegex, (match, alias) => {
-        return `[[media/${newName}${alias || ""}]]`;
+        return `[[${assetsFolderName}/${newName}${alias || ""}]]`;
       });
     }
     await this.createNoteWithSafety(finalImportFolder, noteName, content);
@@ -1686,21 +1706,6 @@ var TextBundleImporter = class {
   getAttachmentFolder() {
     var _a2, _b2;
     return ((_b2 = (_a2 = this.app.vault).getConfig) == null ? void 0 : _b2.call(_a2, "attachmentFolderPath")) || "";
-  }
-  reverseTransformLinks(content) {
-    content = content.replace(/!\[([^\]]*)\]\(assets\/([^\)]+)\)/g, (match, alt, filename) => {
-      return alt ? `![[media/${filename}|${alt}]]` : `![[media/${filename}]]`;
-    });
-    content = content.replace(/\[([^\]]+)\]\(assets\/([^\)]+)\)/g, (match, text, filename) => {
-      return text === filename ? `[[media/${filename}]]` : `[[media/${filename}|${text}]]`;
-    });
-    content = content.replace(/\[([^\]]+)\]\(\.\.\/([^/]+)\/text\.(md|markdown|txt)\)/g, (match, text, folderName) => {
-      const decodedBundle = decodeURIComponent(folderName);
-      const bundleBase = decodedBundle.replace(/\.textbundle$/i, "");
-      const noteName = bundleBase.replace(/ \(\d+\)$/, "");
-      return text === noteName ? `[[${noteName}]]` : `[[${noteName}|${text}]]`;
-    });
-    return content;
   }
 };
 
@@ -2138,30 +2143,47 @@ var AudioModule = class {
     this.context.settings = newSettings;
   }
   registerEvents() {
+    const audioExtensions = ["webm", "ogg", "wav", "mp3", "m4a", "flac", "aac", "opus", "mp4", "mov", "mkv", "avi"];
     this.context.plugin.registerEvent(
       this.context.app.workspace.on("file-menu", (menu, abstractFile) => {
         if (!this.context.settings.enableAudioConverter) return;
-        const format = this.context.settings.defaultAudioOutputFormat || "mp3";
+        const format = (this.context.settings.defaultAudioOutputFormat || "mp3").toLowerCase();
+        let audioFiles = [];
         if (abstractFile instanceof import_obsidian8.TFile) {
           const ext = abstractFile.extension.toLowerCase();
-          const audioExtensions = ["webm", "ogg", "wav", "mp3", "m4a", "flac", "aac", "opus"];
           if (audioExtensions.includes(ext) && ext !== format) {
-            menu.addItem((item) => {
-              item.setTitle(`Alchemist: Convert to ${format.toUpperCase()}`).setIcon("music").onClick(() => this.runConversion([abstractFile], format));
-            });
+            audioFiles.push(abstractFile);
           }
+        } else if (abstractFile instanceof import_obsidian8.TFolder) {
+          const collect = (f) => {
+            if (f instanceof import_obsidian8.TFile) {
+              const ext = f.extension.toLowerCase();
+              if (audioExtensions.includes(ext) && ext !== format) {
+                audioFiles.push(f);
+              }
+            } else if (f instanceof import_obsidian8.TFolder) {
+              f.children.forEach((child) => collect(child));
+            }
+          };
+          collect(abstractFile);
         }
+        if (audioFiles.length === 0) return;
+        menu.addItem((item) => {
+          const title = audioFiles.length === 1 ? `Alchemist: Convert to ${format.toUpperCase()}` : `Alchemist: Convert folder (${audioFiles.length} files) to ${format.toUpperCase()}`;
+          item.setTitle(title).setIcon("music").onClick(() => this.runConversion(audioFiles, format));
+        });
       })
     );
     this.context.plugin.registerEvent(
       this.context.app.workspace.on("files-menu", (menu, files) => {
         if (!this.context.settings.enableAudioConverter) return;
-        const audioExtensions = ["webm", "ogg", "wav", "mp3", "m4a", "flac", "aac", "opus"];
-        const audioFiles = files.filter((f) => f instanceof import_obsidian8.TFile && audioExtensions.includes(f.extension.toLowerCase()) && f.extension.toLowerCase() !== format);
+        const format = (this.context.settings.defaultAudioOutputFormat || "mp3").toLowerCase();
+        const audioFiles = files.filter(
+          (f) => f instanceof import_obsidian8.TFile && audioExtensions.includes(f.extension.toLowerCase()) && f.extension.toLowerCase() !== format
+        );
         if (audioFiles.length <= 1) return;
-        const format = this.context.settings.defaultAudioOutputFormat || "mp3";
         menu.addItem((item) => {
-          item.setTitle(`Alchemist: Convert ${audioFiles.length} files to ${format.toUpperCase()}`).setIcon("music").onClick(() => this.runConversion(audioFiles, format));
+          item.setTitle(`Alchemist: Convert selected (${audioFiles.length} files) to ${format.toUpperCase()}`).setIcon("music").onClick(() => this.runConversion(audioFiles, format));
         });
       })
     );
@@ -2212,10 +2234,16 @@ var AudioModule = class {
         if (frontmatter.album) metadata.album = frontmatter.album;
         if (frontmatter.genre) metadata.genre = frontmatter.genre;
         if (frontmatter.date) metadata.date = String(frontmatter.date);
+        else if (frontmatter.creation_date) metadata.date = String(frontmatter.creation_date);
         if (!frontmatter.genre && frontmatter.tags) {
           const tags = Array.isArray(frontmatter.tags) ? frontmatter.tags : [frontmatter.tags];
           if (tags.length > 0) metadata.genre = tags[0];
         }
+      }
+      if (!(frontmatter == null ? void 0 : frontmatter.title)) {
+        const content = await this.context.app.vault.read(mdFile);
+        const h1Match = content.match(/^#\s+(.+)$/m);
+        if (h1Match) metadata.title = h1Match[1].trim();
       }
     }
     return metadata;

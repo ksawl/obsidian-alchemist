@@ -51,3 +51,42 @@ export function transformMarkdownLinks(
 
     return content;
 }
+
+/**
+ * Transforms Markdown-style links [link](assets/link) back to Obsidian-style [[link]]
+ * @param content Markdown content
+ * @param assetsFolder The folder where assets were imported into (e.g. 'media')
+ */
+export function reverseTransformLinks(
+    content: string, 
+    assetsFolder: string
+): string {
+    const assetsPrefix = 'assets/';
+    const targetPrefix = assetsFolder ? `${assetsFolder}/` : '';
+
+    // 1. Embeds: ![alt](assets/filename) -> ![[targetPrefix/filename|alt]]
+    content = content.replace(/!\[([^\]]*)\]\(assets\/([^\)]+)\)/g, (match, alt, filename) => {
+        const isRedundant = alt === filename;
+        return (alt && !isRedundant) ? `![[${targetPrefix}${filename}|${alt}]]` : `![[${targetPrefix}${filename}]]`;
+    });
+
+    // 2. Links: [text](assets/filename) -> [[targetPrefix/filename|text]]
+    content = content.replace(/\[([^\]]+)\]\(assets\/([^\)]+)\)/g, (match, text, filename) => {
+        const isRedundant = text === filename;
+        return (text && !isRedundant) ? `[[${targetPrefix}${filename}|${text}]]` : `[[${targetPrefix}${filename}]]`;
+    });
+
+
+    // 3. Cross-Bundle Links: [Label](../BundleName.textbundle/text.md) -> [[NoteName|Label]]
+    content = content.replace(/\[([^\]]+)\]\(\.\.\/([^/]+)\/text\.(md|markdown|txt)\)/g, (match, text, folderName) => {
+        const decodedBundle = decodeURIComponent(folderName);
+        const bundleBase = decodedBundle.replace(/\.textbundle$/i, '');
+        // Handle collision suffixes like "Note (1)"
+        const noteName = bundleBase.replace(/ \(\d+\)$/, '');
+        
+        return text === noteName ? `[[${noteName}]]` : `[[${noteName}|${text}]]`;
+    });
+
+    return content;
+}
+
