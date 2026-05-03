@@ -22,7 +22,7 @@ var __copyProps = (to, from, except, desc) => {
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// main.ts
+// src/main.ts
 var main_exports = {};
 __export(main_exports, {
   default: () => AlchemistPlugin
@@ -30,34 +30,33 @@ __export(main_exports, {
 module.exports = __toCommonJS(main_exports);
 var import_obsidian9 = require("obsidian");
 
-// settings.ts
+// src/settings.ts
 var import_obsidian = require("obsidian");
 var DEFAULT_SETTINGS = {
-  enableTextBundle: true,
-  enableAudioConverter: true,
-  enableDataviewExport: true,
-  enableSmartPaste: true,
   lastDialogPath: "",
+  enableTextBundle: true,
+  compressionFormat: "textbundle",
+  conflictStrategy: "rename",
   defaultImportPath: "",
+  restoreFolderStructure: true,
+  recursionDepth: 0,
   includeImages: true,
   includeAudio: true,
   includeVideo: true,
   includePDF: true,
-  recursionDepth: 0,
-  compressionFormat: "zip",
-  conflictStrategy: "rename",
-  restoreFolderStructure: true,
+  enableAudioConverter: true,
   targetFolderStrategy: "source",
   specificTargetFolder: "",
-  deleteOriginalWebM: false,
   defaultAudioOutputFormat: "mp3",
-  defaultAudioArtist: "Alchemist",
-  defaultAudioAlbum: "Obsidian Vault",
-  defaultAudioGenre: "Voice Note",
-  dataviewExportStrategy: "dialog",
-  dataviewVaultPath: "Exports",
+  deleteOriginalWebM: false,
+  defaultAudioArtist: "Obsidian",
+  defaultAudioAlbum: "Voice Notes",
+  defaultAudioGenre: "Speech",
+  enableSmartPaste: true,
   stripTrackingParameters: true,
-  cleanMsoHtml: true
+  enableDataviewExport: true,
+  dataviewExportStrategy: "vault",
+  dataviewVaultPath: "Exports"
 };
 var AlchemistSettingTab = class extends import_obsidian.PluginSettingTab {
   constructor(app, plugin) {
@@ -67,167 +66,152 @@ var AlchemistSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Alchemist: Central Command" });
-    containerEl.createEl("h3", { text: "Core Modules" });
-    new import_obsidian.Setting(containerEl).setName("Enable TextBundle").setDesc("Export/Import notes as TextBundle.").addToggle((toggle) => toggle.setValue(this.plugin.settings.enableTextBundle).onChange(async (value) => {
+    new import_obsidian.Setting(containerEl).setName("General settings").setHeading();
+    new import_obsidian.Setting(containerEl).setName("Enable textbundle").setDesc("Enable support for .textbundle and .textpack formats.").addToggle((toggle) => toggle.setValue(this.plugin.settings.enableTextBundle).onChange(async (value) => {
       this.plugin.settings.enableTextBundle = value;
       await this.plugin.saveSettings();
       this.display();
     }));
-    new import_obsidian.Setting(containerEl).setName("Enable Audio Converter").setDesc("Convert WebM recordings to MP3/WAV/OGG (Desktop).").addToggle((toggle) => toggle.setValue(this.plugin.settings.enableAudioConverter).onChange(async (value) => {
+    new import_obsidian.Setting(containerEl).setName("Enable audio converter").setDesc("Enable context menu options to convert audio files via FFmpeg.").addToggle((toggle) => toggle.setValue(this.plugin.settings.enableAudioConverter).onChange(async (value) => {
       this.plugin.settings.enableAudioConverter = value;
       await this.plugin.saveSettings();
       this.display();
     }));
-    new import_obsidian.Setting(containerEl).setName("Enable Dataview Export").setDesc("Add CSV export button to Dataview tables.").addToggle((toggle) => toggle.setValue(this.plugin.settings.enableDataviewExport).onChange(async (value) => {
-      this.plugin.settings.enableDataviewExport = value;
-      await this.plugin.saveSettings();
-      this.display();
-    }));
-    new import_obsidian.Setting(containerEl).setName("Enable Smart Paste").setDesc("Clean clipboard content from trackers and junk HTML.").addToggle((toggle) => toggle.setValue(this.plugin.settings.enableSmartPaste).onChange(async (value) => {
+    new import_obsidian.Setting(containerEl).setName("Enable smart paste").setDesc("Automatically clean trackers and improve pasted content.").addToggle((toggle) => toggle.setValue(this.plugin.settings.enableSmartPaste).onChange(async (value) => {
       this.plugin.settings.enableSmartPaste = value;
       await this.plugin.saveSettings();
       this.display();
     }));
+    new import_obsidian.Setting(containerEl).setName("Enable dataview export").setDesc("Add export buttons to Dataview tables.").addToggle((toggle) => toggle.setValue(this.plugin.settings.enableDataviewExport).onChange(async (value) => {
+      this.plugin.settings.enableDataviewExport = value;
+      await this.plugin.saveSettings();
+      this.display();
+    }));
     if (this.plugin.settings.enableTextBundle) {
-      containerEl.createEl("h3", { text: "TextBundle Strategy" });
-      new import_obsidian.Setting(containerEl).setName("Default Import Path").setDesc("Folder where TextBundles will be unpacked by default.").addText((text) => text.setPlaceholder("e.g. Imports/TextBundle").setValue(this.plugin.settings.defaultImportPath).onChange(async (value) => {
-        this.plugin.settings.defaultImportPath = value;
-        await this.plugin.saveSettings();
-      }));
-      new import_obsidian.Setting(containerEl).setName("Include Images").addToggle((toggle) => toggle.setValue(this.plugin.settings.includeImages).onChange(async (value) => {
-        this.plugin.settings.includeImages = value;
-        await this.plugin.saveSettings();
-      }));
-      new import_obsidian.Setting(containerEl).setName("Include Audio").addToggle((toggle) => toggle.setValue(this.plugin.settings.includeAudio).onChange(async (value) => {
-        this.plugin.settings.includeAudio = value;
-        await this.plugin.saveSettings();
-      }));
-      new import_obsidian.Setting(containerEl).setName("Include Video").addToggle((toggle) => toggle.setValue(this.plugin.settings.includeVideo).onChange(async (value) => {
-        this.plugin.settings.includeVideo = value;
-        await this.plugin.saveSettings();
-      }));
-      new import_obsidian.Setting(containerEl).setName("Include PDFs").addToggle((toggle) => toggle.setValue(this.plugin.settings.includePDF).onChange(async (value) => {
-        this.plugin.settings.includePDF = value;
-        await this.plugin.saveSettings();
-      }));
-      new import_obsidian.Setting(containerEl).setName("Recursion Depth").setDesc("How many levels of linked notes to include (0 = current note only).").addSlider((slider) => slider.setLimits(0, 5, 1).setValue(this.plugin.settings.recursionDepth).setDynamicTooltip().onChange(async (value) => {
-        this.plugin.settings.recursionDepth = value;
-        await this.plugin.saveSettings();
-      }));
-      new import_obsidian.Setting(containerEl).setName("Compression Format").setDesc("Target file extension for exports.").addDropdown((dropdown) => dropdown.addOption("zip", ".zip (Standard)").addOption("textbundle", ".textbundle").addOption("textpack", ".textpack").setValue(this.plugin.settings.compressionFormat).onChange(async (value) => {
+      new import_obsidian.Setting(containerEl).setName("Textbundle configuration").setHeading();
+      new import_obsidian.Setting(containerEl).setName("Default compression format").setDesc("Used when exporting notes.").addDropdown((dropdown) => dropdown.addOption("zip", ".zip (standard)").addOption("textbundle", ".textbundle").addOption("textpack", ".textpack").setValue(this.plugin.settings.compressionFormat).onChange(async (value) => {
         this.plugin.settings.compressionFormat = value;
         await this.plugin.saveSettings();
       }));
-      new import_obsidian.Setting(containerEl).setName("Conflict Strategy").setDesc("What to do if a file with the same name already exists during import.").addDropdown((dropdown) => dropdown.addOption("rename", "Auto-rename (Versioning)").addOption("skip", "Skip Existing").addOption("overwrite", "Overwrite (CAUTION)").setValue(this.plugin.settings.conflictStrategy).onChange(async (value) => {
+      new import_obsidian.Setting(containerEl).setName("Conflict strategy").setDesc("What to do if a file with the same name already exists during import.").addDropdown((dropdown) => dropdown.addOption("rename", "Auto-rename (versioning)").addOption("skip", "Skip existing").addOption("overwrite", "Overwrite (caution)").setValue(this.plugin.settings.conflictStrategy).onChange(async (value) => {
         this.plugin.settings.conflictStrategy = value;
         await this.plugin.saveSettings();
       }));
-      new import_obsidian.Setting(containerEl).setName("Restore Folder Structure").setDesc("Try to recreate the original vault path using metadata.").addToggle((toggle) => toggle.setValue(this.plugin.settings.restoreFolderStructure).onChange(async (value) => {
+      new import_obsidian.Setting(containerEl).setName("Default import path").setDesc("Folder where textbundles will be unpacked by default.").addText((text) => text.setPlaceholder("E.g. Imports/textbundle").setValue(this.plugin.settings.defaultImportPath).onChange(async (value) => {
+        this.plugin.settings.defaultImportPath = value;
+        await this.plugin.saveSettings();
+      }));
+      new import_obsidian.Setting(containerEl).setName("Restore folder structure").setDesc("Try to recreate the original vault path using metadata.").addToggle((toggle) => toggle.setValue(this.plugin.settings.restoreFolderStructure).onChange(async (value) => {
         this.plugin.settings.restoreFolderStructure = value;
+        await this.plugin.saveSettings();
+      }));
+      new import_obsidian.Setting(containerEl).setName("Export recursion depth").setDesc("How many levels of linked notes to include in the bundle (0 = only the note itself).").addSlider((slider) => slider.setLimits(0, 5, 1).setValue(this.plugin.settings.recursionDepth).setDynamicTooltip().onChange(async (value) => {
+        this.plugin.settings.recursionDepth = value;
+        await this.plugin.saveSettings();
+      }));
+      new import_obsidian.Setting(containerEl).setName("Asset inclusion").setDesc("Which types of embedded assets should be included in the bundle.").setHeading();
+      new import_obsidian.Setting(containerEl).setName("Include images").addToggle((toggle) => toggle.setValue(this.plugin.settings.includeImages).onChange(async (value) => {
+        this.plugin.settings.includeImages = value;
+        await this.plugin.saveSettings();
+      }));
+      new import_obsidian.Setting(containerEl).setName("Include audio").addToggle((toggle) => toggle.setValue(this.plugin.settings.includeAudio).onChange(async (value) => {
+        this.plugin.settings.includeAudio = value;
+        await this.plugin.saveSettings();
+      }));
+      new import_obsidian.Setting(containerEl).setName("Include video").addToggle((toggle) => toggle.setValue(this.plugin.settings.includeVideo).onChange(async (value) => {
+        this.plugin.settings.includeVideo = value;
+        await this.plugin.saveSettings();
+      }));
+      new import_obsidian.Setting(containerEl).setName("Include PDF").addToggle((toggle) => toggle.setValue(this.plugin.settings.includePDF).onChange(async (value) => {
+        this.plugin.settings.includePDF = value;
         await this.plugin.saveSettings();
       }));
     }
     if (this.plugin.settings.enableAudioConverter) {
-      containerEl.createEl("h3", { text: "Audio Transformation" });
-      new import_obsidian.Setting(containerEl).setName("Target Folder Strategy").setDesc("Where to save converted files.").addDropdown((dropdown) => dropdown.addOption("source", "Same as source").addOption("specific", "Specific folder").addOption("dialog", "Always ask with dialog").setValue(this.plugin.settings.targetFolderStrategy).onChange(async (value) => {
+      new import_obsidian.Setting(containerEl).setName("Audio transformation").setHeading();
+      new import_obsidian.Setting(containerEl).setName("Target folder strategy").setDesc("Where to save converted files.").addDropdown((dropdown) => dropdown.addOption("source", "Same as source").addOption("specific", "Specific folder").addOption("dialog", "Always ask with dialog").setValue(this.plugin.settings.targetFolderStrategy).onChange(async (value) => {
         this.plugin.settings.targetFolderStrategy = value;
         await this.plugin.saveSettings();
         this.display();
       }));
       if (this.plugin.settings.targetFolderStrategy === "specific") {
-        new import_obsidian.Setting(containerEl).setName("Specific Target Folder").addText((text) => text.setValue(this.plugin.settings.specificTargetFolder).onChange(async (value) => {
+        new import_obsidian.Setting(containerEl).setName("Specific target folder").addText((text) => text.setValue(this.plugin.settings.specificTargetFolder).onChange(async (value) => {
           this.plugin.settings.specificTargetFolder = value;
           await this.plugin.saveSettings();
         }));
       }
-      new import_obsidian.Setting(containerEl).setName("Default Output Format").setDesc("Target format for audio conversion.").addDropdown((dropdown) => dropdown.addOption("mp3", "MP3").addOption("wav", "WAV").addOption("ogg", "OGG").addOption("m4a", "M4A").addOption("flac", "FLAC").setValue(this.plugin.settings.defaultAudioOutputFormat).onChange(async (value) => {
+      new import_obsidian.Setting(containerEl).setName("Default output format").setDesc("Target format for audio conversion.").addDropdown((dropdown) => dropdown.addOption("mp3", "MP3").addOption("wav", "WAV").addOption("ogg", "OGG").addOption("m4a", "M4A").addOption("flac", "FLAC").setValue(this.plugin.settings.defaultAudioOutputFormat).onChange(async (value) => {
         this.plugin.settings.defaultAudioOutputFormat = value;
         await this.plugin.saveSettings();
         this.display();
       }));
-      new import_obsidian.Setting(containerEl).setName("Delete original WebM").setDesc("Remove the original file after successful conversion.").addToggle((toggle) => toggle.setValue(this.plugin.settings.deleteOriginalWebM).onChange(async (value) => {
+      new import_obsidian.Setting(containerEl).setName("Delete original webm").setDesc("Remove the original file after successful conversion.").addToggle((toggle) => toggle.setValue(this.plugin.settings.deleteOriginalWebM).onChange(async (value) => {
         this.plugin.settings.deleteOriginalWebM = value;
         await this.plugin.saveSettings();
       }));
-      containerEl.createEl("h4", { text: "Default Metadata" });
-      new import_obsidian.Setting(containerEl).setName("Default Artist").addText((text) => text.setValue(this.plugin.settings.defaultAudioArtist).onChange(async (value) => {
+      new import_obsidian.Setting(containerEl).setName("Default metadata").setDesc("Fallback values for audio tags.").setHeading();
+      new import_obsidian.Setting(containerEl).setName("Default artist").addText((text) => text.setValue(this.plugin.settings.defaultAudioArtist).onChange(async (value) => {
         this.plugin.settings.defaultAudioArtist = value;
         await this.plugin.saveSettings();
       }));
-      new import_obsidian.Setting(containerEl).setName("Default Album").addText((text) => text.setValue(this.plugin.settings.defaultAudioAlbum).onChange(async (value) => {
+      new import_obsidian.Setting(containerEl).setName("Default album").addText((text) => text.setValue(this.plugin.settings.defaultAudioAlbum).onChange(async (value) => {
         this.plugin.settings.defaultAudioAlbum = value;
         await this.plugin.saveSettings();
       }));
-      new import_obsidian.Setting(containerEl).setName("Default Genre").addText((text) => text.setValue(this.plugin.settings.defaultAudioGenre).onChange(async (value) => {
+      new import_obsidian.Setting(containerEl).setName("Default genre").addText((text) => text.setValue(this.plugin.settings.defaultAudioGenre).onChange(async (value) => {
         this.plugin.settings.defaultAudioGenre = value;
         await this.plugin.saveSettings();
       }));
     }
+    if (this.plugin.settings.enableSmartPaste) {
+      new import_obsidian.Setting(containerEl).setName("Hygiene and sanitization").setHeading();
+      new import_obsidian.Setting(containerEl).setName("Strip marketing trackers").setDesc("Remove utm, fbclid, and other trackers from pasted urls.").addToggle((toggle) => toggle.setValue(this.plugin.settings.stripTrackingParameters).onChange(async (value) => {
+        this.plugin.settings.stripTrackingParameters = value;
+        await this.plugin.saveSettings();
+      }));
+    }
     if (this.plugin.settings.enableDataviewExport) {
-      containerEl.createEl("h3", { text: "Dataview Export" });
-      new import_obsidian.Setting(containerEl).setName("Export Strategy").setDesc("How to handle CSV generation.").addDropdown((dropdown) => dropdown.addOption("dialog", "System Save Dialog").addOption("vault", "Silent Save to Vault").setValue(this.plugin.settings.dataviewExportStrategy).onChange(async (value) => {
+      new import_obsidian.Setting(containerEl).setName("Dataview exports").setHeading();
+      new import_obsidian.Setting(containerEl).setName("Export strategy").setDesc("Where to save CSV files.").addDropdown((dropdown) => dropdown.addOption("vault", "To vault folder").addOption("dialog", "Always ask with dialog").setValue(this.plugin.settings.dataviewExportStrategy).onChange(async (value) => {
         this.plugin.settings.dataviewExportStrategy = value;
         await this.plugin.saveSettings();
         this.display();
       }));
       if (this.plugin.settings.dataviewExportStrategy === "vault") {
-        new import_obsidian.Setting(containerEl).setName("Vault Target Folder").setDesc("Folder where Dataview CSVs will be saved.").addText((text) => text.setPlaceholder("Exports").setValue(this.plugin.settings.dataviewVaultPath).onChange(async (value) => {
+        new import_obsidian.Setting(containerEl).setName("Vault export folder").addText((text) => text.setValue(this.plugin.settings.dataviewVaultPath).onChange(async (value) => {
           this.plugin.settings.dataviewVaultPath = value;
           await this.plugin.saveSettings();
         }));
       }
     }
-    if (this.plugin.settings.enableSmartPaste) {
-      containerEl.createEl("h3", { text: "Hygiene & Sanitization (Paste)" });
-      new import_obsidian.Setting(containerEl).setName("Strip Marketing Trackers").setDesc("Remove UTM, fbclid, and other trackers from pasted URLs.").addToggle((toggle) => toggle.setValue(this.plugin.settings.stripTrackingParameters).onChange(async (value) => {
-        this.plugin.settings.stripTrackingParameters = value;
-        await this.plugin.saveSettings();
-      }));
-      new import_obsidian.Setting(containerEl).setName("Clean HTML Artifacts").setDesc("Remove proprietary meta-tags from Google Docs/MS Office pastes.").addToggle((toggle) => toggle.setValue(this.plugin.settings.cleanMsoHtml).onChange(async (value) => {
-        this.plugin.settings.cleanMsoHtml = value;
-        await this.plugin.saveSettings();
-      }));
-    }
     containerEl.createEl("hr");
-    const supportDiv = containerEl.createDiv({ cls: "alchemist-support-container" });
-    supportDiv.style.textAlign = "center";
-    supportDiv.style.padding = "20px";
-    supportDiv.createEl("h3", { text: "Support the Alchemist" });
-    supportDiv.createEl("p", { text: "If you find this tool useful, consider supporting its development." });
-    const buttonsDiv = supportDiv.createDiv();
-    buttonsDiv.style.display = "flex";
-    buttonsDiv.style.justifyContent = "center";
-    buttonsDiv.style.gap = "15px";
-    const kofiBtn = buttonsDiv.createEl("a", {
-      href: "https://ko-fi.com/kharizma",
-      cls: "alchemist-donate-btn"
+    const footer = containerEl.createEl("div", { cls: "alchemist-settings-footer" });
+    footer.createEl("span", { text: "The Alchemist: Crafted with love by Kharizma & Latreia " });
+    const donateLink = footer.createEl("a", {
+      text: "\u{1F496} Support development",
+      href: "https://boosty.to/obsidian-alchemist"
     });
-    kofiBtn.innerText = "Buy me a coffee";
-    kofiBtn.style.cssText = "background: #29abe0; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-weight: bold;";
-    const boostyBtn = buttonsDiv.createEl("a", {
-      href: "https://boosty.to/kharizma",
-      cls: "alchemist-donate-btn"
-    });
-    boostyBtn.innerText = "Support on Boosty";
-    boostyBtn.style.cssText = "background: #f15f2c; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-weight: bold;";
+    donateLink.setAttr("target", "_blank");
   }
 };
 
 // src/core/SystemAdapter.ts
 var ElectronSystemAdapter = class {
   constructor() {
-    const electron = window.require("electron");
+    const nodeRequire = window.require;
+    const electron = nodeRequire("electron");
     let remote;
     try {
-      remote = window.require("@electron/remote");
+      remote = nodeRequire("@electron/remote");
     } catch (e) {
       remote = electron.remote;
     }
     this.dialog = remote ? remote.dialog : electron.dialog;
-    this.fs = window.require("fs");
-    this.path = window.require("path");
-    this.os = window.require("os");
+    this.fs = nodeRequire("fs");
+    this.path = nodeRequire("path");
+    this.os = nodeRequire("os");
+    const childProcess = nodeRequire("child_process");
+    this.spawn = childProcess.spawn;
   }
   async showSaveDialog(options) {
     return await this.dialog.showSaveDialog(options);
@@ -1432,17 +1416,16 @@ function transformMarkdownLinks(content, resolver) {
   return content;
 }
 function reverseTransformLinks(content, assetsFolder) {
-  const assetsPrefix = "assets/";
   const targetPrefix = assetsFolder ? `${assetsFolder}/` : "";
-  content = content.replace(/!\[([^\]]*)\]\(assets\/([^\)]+)\)/g, (match, alt, filename) => {
+  content = content.replace(/!\[([^\]]*)\]\(assets\/([^)]+)\)/g, (_match, alt, filename) => {
     const isRedundant = alt === filename;
     return alt && !isRedundant ? `![[${targetPrefix}${filename}|${alt}]]` : `![[${targetPrefix}${filename}]]`;
   });
-  content = content.replace(/\[([^\]]+)\]\(assets\/([^\)]+)\)/g, (match, text, filename) => {
+  content = content.replace(/\[([^\]]+)\]\(assets\/([^)]+)\)/g, (_match, text, filename) => {
     const isRedundant = text === filename;
     return text && !isRedundant ? `[[${targetPrefix}${filename}|${text}]]` : `[[${targetPrefix}${filename}]]`;
   });
-  content = content.replace(/\[([^\]]+)\]\(\.\.\/([^/]+)\/text\.(md|markdown|txt)\)/g, (match, text, folderName) => {
+  content = content.replace(/\[([^\]]+)\]\(\.\.\/([^/]+)\/text\.(md|markdown|txt)\)/g, (_match, text, folderName) => {
     const decodedBundle = decodeURIComponent(folderName);
     const bundleBase = decodedBundle.replace(/\.textbundle$/i, "");
     const noteName = bundleBase.replace(/ \(\d+\)$/, "");
@@ -1468,7 +1451,7 @@ var TextBundlePacker = class {
       const usedNames = /* @__PURE__ */ new Set();
       const bundleMap = /* @__PURE__ */ new Map();
       for (const note of context.notes) {
-        let baseName = note.basename;
+        const baseName = note.basename;
         let bundleName = `${baseName}.textbundle`;
         let counter = 1;
         while (usedNames.has(bundleName)) {
@@ -1563,10 +1546,10 @@ var TextBundleImporter = class {
     try {
       const unzipped = unzipSync(new Uint8Array(data));
       await this.processUnzipped(unzipped, targetPath, sourceName);
-      new import_obsidian4.Notice("Alchemist: Import successful");
+      new import_obsidian4.Notice("Import successful");
     } catch (e) {
       console.error("Alchemist: Import failed", e);
-      new import_obsidian4.Notice("Alchemist: Import failed. Check console for details.");
+      new import_obsidian4.Notice("Import failed. Check console for details.");
     }
   }
   async processUnzipped(unzipped, targetPath, sourceName) {
@@ -1579,7 +1562,7 @@ var TextBundleImporter = class {
     if (bundleFolders.size === 0) {
       await this.importSingleBundle(unzipped, targetPath, sourceName);
     } else {
-      new import_obsidian4.Notice(`Alchemist: Importing ${bundleFolders.size} notes from TextPack...`);
+      new import_obsidian4.Notice(`Importing ${bundleFolders.size} notes from textpack...`);
       for (const folder of bundleFolders) {
         const prefix = `${folder}/`;
         const bundleFiles = {};
@@ -1637,7 +1620,7 @@ var TextBundleImporter = class {
     for (const [oldName, newName] of assetRenameMap.entries()) {
       const escapedOldName = oldName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const linkRegex = new RegExp(`\\[\\[${assetsFolderName}/${escapedOldName}(\\|[^\\]]+)?\\]\\]`, "g");
-      content = content.replace(linkRegex, (match, alias) => {
+      content = content.replace(linkRegex, (_match, alias) => {
         return `[[${assetsFolderName}/${newName}${alias || ""}]]`;
       });
     }
@@ -1704,8 +1687,11 @@ var TextBundleImporter = class {
     }
   }
   getAttachmentFolder() {
-    var _a2, _b2;
-    return ((_b2 = (_a2 = this.app.vault).getConfig) == null ? void 0 : _b2.call(_a2, "attachmentFolderPath")) || "";
+    const vault = this.app.vault;
+    if (typeof vault.getConfig === "function") {
+      return vault.getConfig("attachmentFolderPath") || "";
+    }
+    return "";
   }
 };
 
@@ -1729,31 +1715,33 @@ var TextBundleModule = class {
     this.context.settings = newSettings;
   }
   registerRibbonIcons() {
-    this.context.plugin.addRibbonIcon("package-plus", "Alchemist: Import TextBundle", () => {
+    this.context.plugin.addRibbonIcon("package-plus", "Import textbundle", () => {
       if (!this.context.settings.enableTextBundle) {
-        new import_obsidian5.Notice("TextBundle module is disabled in settings.");
+        new import_obsidian5.Notice("Textbundle module is disabled in settings.");
         return;
       }
-      this.runImport();
+      void this.runImport();
     });
   }
   registerCommands() {
     this.context.plugin.addCommand({
       id: "import-textbundle",
-      name: "Import TextBundle",
+      name: "Import textbundle",
       callback: () => {
         if (!this.context.settings.enableTextBundle) return;
-        this.runImport();
+        void this.runImport();
       }
     });
     this.context.plugin.addCommand({
       id: "export-current-textbundle",
-      name: "Export current file as TextBundle",
+      name: "Export current file as textbundle",
       checkCallback: (checking) => {
         if (!this.context.settings.enableTextBundle) return false;
         const activeFile = this.context.app.workspace.getActiveFile();
         if (activeFile) {
-          if (!checking) this.runExport(activeFile);
+          if (!checking) {
+            void this.runExport(activeFile);
+          }
           return true;
         }
         return false;
@@ -1766,11 +1754,13 @@ var TextBundleModule = class {
         if (!this.context.settings.enableTextBundle) return;
         if (abstractFile instanceof import_obsidian5.TFile && abstractFile.extension === "md") {
           menu.addItem((item) => {
-            item.setTitle("Alchemist: Export as TextBundle").setIcon("package").onClick(() => this.runExport(abstractFile));
+            item.setTitle("Export as textbundle").setIcon("package").onClick(() => {
+              void this.runExport(abstractFile);
+            });
           });
         } else if (abstractFile instanceof import_obsidian5.TFolder) {
           menu.addItem((item) => {
-            item.setTitle("Alchemist: Export folder as TextBundle").setIcon("package").onClick(async () => {
+            item.setTitle("Export folder as textbundle").setIcon("package").onClick(async () => {
               const files = [];
               const collect = (f) => {
                 if (f instanceof import_obsidian5.TFile && f.extension === "md") files.push(f);
@@ -1778,11 +1768,11 @@ var TextBundleModule = class {
               };
               collect(abstractFile);
               if (files.length === 0) {
-                new import_obsidian5.Notice("No markdown files found in this folder.");
+                new import_obsidian5.Notice("No Markdown files found in this folder.");
                 return;
               }
               const result = await this.context.system.showOpenDialog({
-                title: "Select Destination for Bulk Export",
+                title: "Select destination for bulk export",
                 defaultPath: this.context.settings.lastDialogPath,
                 properties: ["openDirectory", "createDirectory"]
               });
@@ -1790,7 +1780,7 @@ var TextBundleModule = class {
                 const targetDir = result.filePaths[0];
                 this.context.settings.lastDialogPath = targetDir;
                 await this.context.plugin.saveSettings();
-                new import_obsidian5.Notice(`Bulk Exporting ${files.length} notes...`);
+                new import_obsidian5.Notice(`Bulk exporting ${files.length} notes...`);
                 let successCount = 0;
                 for (const f of files) {
                   try {
@@ -1798,7 +1788,7 @@ var TextBundleModule = class {
                     const blob = await this.packer.pack(context);
                     const extension = this.context.settings.compressionFormat || "textbundle";
                     const fullPath = this.context.system.path.join(targetDir, `${f.basename}.${extension}`);
-                    this.context.system.fs.writeFileSync(fullPath, Buffer.from(blob));
+                    this.context.system.fs.writeFileSync(fullPath, new Uint8Array(blob));
                     successCount++;
                   } catch (e) {
                     console.error(`Export failed for ${f.name}:`, e);
@@ -1809,7 +1799,9 @@ var TextBundleModule = class {
             });
           });
           menu.addItem((item) => {
-            item.setTitle("Alchemist: Import into here").setIcon("package-plus").onClick(() => this.runImport(abstractFile.path));
+            item.setTitle("Import into here").setIcon("package-plus").onClick(() => {
+              void this.runImport(abstractFile.path);
+            });
           });
         }
       })
@@ -1818,9 +1810,9 @@ var TextBundleModule = class {
   async runImport(targetPath) {
     var _a2;
     const result = await this.context.system.showOpenDialog({
-      title: targetPath ? `Import into ${targetPath}` : "Import TextBundle",
+      title: targetPath ? `Import into ${targetPath}` : "Import textbundle",
       defaultPath: this.context.settings.lastDialogPath,
-      filters: [{ name: "TextBundle", extensions: ["textbundle", "zip", "textpack"] }],
+      filters: [{ name: "Textbundle", extensions: ["textbundle", "zip", "textpack"] }],
       properties: ["openFile"]
     });
     if (!result.canceled && result.filePaths.length > 0) {
@@ -1830,8 +1822,9 @@ var TextBundleModule = class {
       const sourceName = ((_a2 = filePath.split(/[\\/]/).pop()) == null ? void 0 : _a2.replace(/\.(zip|textpack|textbundle)$/i, "")) || "Imported_Note";
       try {
         const data = this.context.system.fs.readFileSync(filePath);
-        await this.importer.importZip(data, targetPath, sourceName);
-        new import_obsidian5.Notice("Successfully imported TextBundle");
+        const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+        await this.importer.importZip(arrayBuffer, targetPath, sourceName);
+        new import_obsidian5.Notice("Successfully imported textbundle");
       } catch (e) {
         console.error("Alchemist Import Error:", e);
         new import_obsidian5.Notice(`Import failed: ${e.message}`);
@@ -1844,14 +1837,14 @@ var TextBundleModule = class {
       const blob = await this.packer.pack(context);
       const extension = this.context.settings.compressionFormat || "textbundle";
       const result = await this.context.system.showSaveDialog({
-        title: "Save TextBundle",
+        title: "Save textbundle",
         defaultPath: this.context.system.path.join(this.context.settings.lastDialogPath, `${file.basename}.${extension}`),
-        filters: [{ name: "TextBundle", extensions: [extension, "zip"] }]
+        filters: [{ name: "Textbundle", extensions: [extension, "zip"] }]
       });
       if (!result.canceled && result.filePath) {
         this.context.settings.lastDialogPath = this.context.system.path.dirname(result.filePath);
         await this.context.plugin.saveSettings();
-        this.context.system.fs.writeFileSync(result.filePath, Buffer.from(blob));
+        this.context.system.fs.writeFileSync(result.filePath, new Uint8Array(blob));
         new import_obsidian5.Notice(`Successfully exported: ${file.basename}`);
       }
     } catch (e) {
@@ -1904,7 +1897,7 @@ function stripTrackers(input) {
         return urlObj.toString();
       }
       return url;
-    } catch (e) {
+    } catch (_e) {
       return url;
     }
   });
@@ -1934,17 +1927,18 @@ var SmartPasteModule = class {
         const cleaned = stripTrackers(content);
         if (content !== cleaned) {
           editor.setValue(cleaned);
-          new import_obsidian6.Notice("Alchemist: Document cleaned from trackers");
+          new import_obsidian6.Notice("Document cleaned from trackers");
         } else {
-          new import_obsidian6.Notice("Alchemist: No trackers found");
+          new import_obsidian6.Notice("No trackers found");
         }
       }
     });
   }
   registerPasteHandler() {
     this.context.plugin.registerEvent(
-      this.context.app.workspace.on("editor-paste", async (evt, editor) => {
+      this.context.app.workspace.on("editor-paste", (evt, editor) => {
         var _a2;
+        if (evt.defaultPrevented) return;
         if (!this.context.settings.enableSmartPaste) return;
         const clipboardData = evt.clipboardData;
         if (!clipboardData) return;
@@ -1955,7 +1949,7 @@ var SmartPasteModule = class {
           if (cleanUrl !== text) {
             evt.preventDefault();
             editor.replaceSelection(cleanUrl);
-            new import_obsidian6.Notice("Alchemist: URL cleaned");
+            new import_obsidian6.Notice("URL cleaned");
           }
         }
       })
@@ -2005,15 +1999,15 @@ var DataviewModule = class {
   setupGlobalObserver() {
     this.observer = new MutationObserver(() => {
       if (!this.context.settings.enableDataviewExport) return;
-      if (this.injectTimeout) clearTimeout(this.injectTimeout);
-      this.injectTimeout = setTimeout(() => {
+      if (this.injectTimeout) activeWindow.clearTimeout(this.injectTimeout);
+      this.injectTimeout = activeWindow.setTimeout(() => {
         this.injectAll();
       }, 300);
     });
   }
   start() {
     if (this.context.settings.enableDataviewExport && this.observer) {
-      this.observer.observe(document.body, { childList: true, subtree: true });
+      this.observer.observe(activeDocument.body, { childList: true, subtree: true });
       this.injectAll();
     }
   }
@@ -2021,33 +2015,31 @@ var DataviewModule = class {
     if (this.observer) {
       this.observer.disconnect();
     }
-    if (this.injectTimeout) clearTimeout(this.injectTimeout);
-    document.querySelectorAll(".alchemist-export-btn").forEach((btn) => btn.remove());
+    if (this.injectTimeout) activeWindow.clearTimeout(this.injectTimeout);
+    activeDocument.querySelectorAll(".alchemist-export-btn").forEach((btn) => btn.remove());
   }
   injectAll() {
     var _a2, _b2;
-    const isDataviewEnabled = (_b2 = (_a2 = this.context.app.plugins) == null ? void 0 : _a2.enabledPlugins) == null ? void 0 : _b2.has("dataview");
+    const app = this.context.app;
+    const isDataviewEnabled = (_b2 = (_a2 = app.plugins) == null ? void 0 : _a2.enabledPlugins) == null ? void 0 : _b2.has("dataview");
     if (!isDataviewEnabled) return;
-    const containers = document.querySelectorAll(".block-language-dataview, .dataview.table-view-table, .dataview-container");
+    const containers = activeDocument.querySelectorAll(".block-language-dataview, .dataview.table-view-table, .dataview-container");
     containers.forEach((c) => this.injectButton(c));
   }
   injectButton(container) {
     if (container.querySelector(".alchemist-export-btn")) return;
     if (!container.querySelector("table") && !container.classList.contains("block-language-dataview")) return;
-    const btn = document.createElement("button");
+    const btn = createEl("button");
     btn.className = "alchemist-export-btn clickable-icon";
     btn.innerText = "\u{1F4BE} CSV";
-    btn.style.cssText = "position: absolute; right: 10px; top: 10px; z-index: 100; font-size: 0.7em; opacity: 0.6;";
-    btn.addEventListener("mouseenter", () => btn.style.opacity = "1");
-    btn.addEventListener("mouseleave", () => btn.style.opacity = "0.6");
     btn.onclick = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.exportTable(container);
+      void this.exportTable(container);
     };
     container.appendChild(btn);
     if (getComputedStyle(container).position === "static") {
-      container.style.position = "relative";
+      container.classList.add("alchemist-relative-container");
     }
   }
   async exportTable(el) {
@@ -2076,10 +2068,10 @@ var DataviewModule = class {
       const fileName = `dataview_export_${timestamp}.csv`;
       const fullPath = `${folderPath}/${fileName}`;
       await this.context.app.vault.create(fullPath, content);
-      new import_obsidian7.Notice(`CSV Saved to Vault: ${fullPath}`);
+      new import_obsidian7.Notice(`CSV saved to vault: ${fullPath}`);
     } else {
       const result = await this.context.system.showSaveDialog({
-        title: "Export Dataview to CSV",
+        title: "Export dataview to CSV",
         defaultPath: this.context.system.path.join(this.context.settings.lastDialogPath, "dataview_export.csv"),
         filters: [{ name: "CSV", extensions: ["csv"] }]
       });
@@ -2087,7 +2079,7 @@ var DataviewModule = class {
         this.context.settings.lastDialogPath = this.context.system.path.dirname(result.filePath);
         await this.context.plugin.saveSettings();
         this.context.system.fs.writeFileSync(result.filePath, content);
-        new import_obsidian7.Notice("CSV Exported Successfully");
+        new import_obsidian7.Notice("CSV exported successfully");
       }
     }
   }
@@ -2100,7 +2092,6 @@ var DataviewModule = class {
 
 // src/features/audio-converter/AudioModule.ts
 var import_obsidian8 = require("obsidian");
-var import_child_process = require("child_process");
 
 // src/features/audio-converter/logic.ts
 function getFfmpegArgs(inputPath, outputPath, format, metadata) {
@@ -2148,7 +2139,7 @@ var AudioModule = class {
       this.context.app.workspace.on("file-menu", (menu, abstractFile) => {
         if (!this.context.settings.enableAudioConverter) return;
         const format = (this.context.settings.defaultAudioOutputFormat || "mp3").toLowerCase();
-        let audioFiles = [];
+        const audioFiles = [];
         if (abstractFile instanceof import_obsidian8.TFile) {
           const ext = abstractFile.extension.toLowerCase();
           if (audioExtensions.includes(ext) && ext !== format) {
@@ -2169,8 +2160,10 @@ var AudioModule = class {
         }
         if (audioFiles.length === 0) return;
         menu.addItem((item) => {
-          const title = audioFiles.length === 1 ? `Alchemist: Convert to ${format.toUpperCase()}` : `Alchemist: Convert folder (${audioFiles.length} files) to ${format.toUpperCase()}`;
-          item.setTitle(title).setIcon("music").onClick(() => this.runConversion(audioFiles, format));
+          const title = audioFiles.length === 1 ? `Convert to ${format.toUpperCase()}` : `Convert folder (${audioFiles.length} files) to ${format.toUpperCase()}`;
+          item.setTitle(title).setIcon("music").onClick(() => {
+            void this.runConversion(audioFiles, format);
+          });
         });
       })
     );
@@ -2183,7 +2176,9 @@ var AudioModule = class {
         );
         if (audioFiles.length <= 1) return;
         menu.addItem((item) => {
-          item.setTitle(`Alchemist: Convert selected (${audioFiles.length} files) to ${format.toUpperCase()}`).setIcon("music").onClick(() => this.runConversion(audioFiles, format));
+          item.setTitle(`Convert selected (${audioFiles.length} files) to ${format.toUpperCase()}`).setIcon("music").onClick(() => {
+            void this.runConversion(audioFiles, format);
+          });
         });
       })
     );
@@ -2196,7 +2191,7 @@ var AudioModule = class {
       this.statusBarItem.show();
       this.updateStatus(processed, total);
     }
-    new import_obsidian8.Notice(`Alchemist: Converting ${total} file(s)...`);
+    new import_obsidian8.Notice(`Converting ${total} file(s)...`);
     for (const file of files) {
       try {
         const metadata = await this.extractMetadata(file);
@@ -2209,7 +2204,7 @@ var AudioModule = class {
       }
     }
     if (this.statusBarItem) this.statusBarItem.hide();
-    new import_obsidian8.Notice(`Alchemist: Finished processing ${processed}/${total} files.`);
+    new import_obsidian8.Notice(`Finished processing ${processed}/${total} files.`);
   }
   updateStatus(current, total) {
     if (!this.statusBarItem) return;
@@ -2229,15 +2224,15 @@ var AudioModule = class {
       const cache = this.context.app.metadataCache.getFileCache(mdFile);
       const frontmatter = cache == null ? void 0 : cache.frontmatter;
       if (frontmatter) {
-        if (frontmatter.title) metadata.title = frontmatter.title;
-        if (frontmatter.artist) metadata.artist = frontmatter.artist;
-        if (frontmatter.album) metadata.album = frontmatter.album;
-        if (frontmatter.genre) metadata.genre = frontmatter.genre;
+        if (frontmatter.title) metadata.title = String(frontmatter.title);
+        if (frontmatter.artist) metadata.artist = String(frontmatter.artist);
+        if (frontmatter.album) metadata.album = String(frontmatter.album);
+        if (frontmatter.genre) metadata.genre = String(frontmatter.genre);
         if (frontmatter.date) metadata.date = String(frontmatter.date);
         else if (frontmatter.creation_date) metadata.date = String(frontmatter.creation_date);
         if (!frontmatter.genre && frontmatter.tags) {
           const tags = Array.isArray(frontmatter.tags) ? frontmatter.tags : [frontmatter.tags];
-          if (tags.length > 0) metadata.genre = tags[0];
+          if (tags.length > 0) metadata.genre = String(tags[0]);
         }
       }
       if (!(frontmatter == null ? void 0 : frontmatter.title)) {
@@ -2248,8 +2243,9 @@ var AudioModule = class {
     }
     return metadata;
   }
-  async convert(file, format, metadata) {
-    return new Promise(async (resolve, reject) => {
+  convert(file, format, metadata) {
+    return new Promise((resolve, reject) => {
+      var _a2;
       const system = this.context.system;
       const app = this.context.app;
       const settings = this.context.settings;
@@ -2258,65 +2254,69 @@ var AudioModule = class {
       const inputPath = system.path.join(basePath, file.path);
       const tempOutputPath = system.path.join(system.os.tmpdir(), `alchemist_${Date.now()}.${format}`);
       const args = getFfmpegArgs(inputPath, tempOutputPath, format, metadata);
-      const child = (0, import_child_process.spawn)("ffmpeg", args);
+      const child = system.spawn("ffmpeg", args);
       let stderr = "";
-      child.stderr.on("data", (data) => {
+      (_a2 = child.stderr) == null ? void 0 : _a2.on("data", (data) => {
         stderr += data.toString();
       });
-      child.on("close", async (code) => {
+      child.on("close", (code) => {
         if (code === 0) {
-          try {
-            const data = system.fs.readFileSync(tempOutputPath);
-            const outputName = file.basename + "." + format;
-            let finalVaultPath;
-            switch (settings.targetFolderStrategy) {
-              case "specific": {
-                const folder = settings.specificTargetFolder || "";
-                finalVaultPath = (0, import_obsidian8.normalizePath)(`${folder}/${outputName}`);
-                if (folder) {
-                  const existing = app.vault.getAbstractFileByPath(folder);
-                  if (!existing) await app.vault.createFolder(folder);
+          void (async () => {
+            try {
+              const data = system.fs.readFileSync(tempOutputPath);
+              const outputName = file.basename + "." + format;
+              let finalVaultPath;
+              switch (settings.targetFolderStrategy) {
+                case "specific": {
+                  const folder = settings.specificTargetFolder || "";
+                  finalVaultPath = (0, import_obsidian8.normalizePath)(`${folder}/${outputName}`);
+                  if (folder) {
+                    const existing = app.vault.getAbstractFileByPath(folder);
+                    if (!existing) await app.vault.createFolder(folder);
+                  }
+                  break;
                 }
-                break;
-              }
-              case "dialog": {
-                const result = await system.showSaveDialog({
-                  title: "Save Converted Audio",
-                  defaultPath: system.path.join(settings.lastDialogPath, outputName),
-                  filters: [{ name: format.toUpperCase(), extensions: [format] }]
-                });
-                if (result.canceled || !result.filePath) {
+                case "dialog": {
+                  const result = await system.showOpenDialog({
+                    title: "Save converted audio",
+                    defaultPath: system.path.join(settings.lastDialogPath, outputName),
+                    properties: ["openFile", "promptToCreate"]
+                  });
+                  if (result.canceled || result.filePaths.length === 0) {
+                    system.fs.unlinkSync(tempOutputPath);
+                    resolve();
+                    return;
+                  }
+                  const savePath = result.filePaths[0];
+                  settings.lastDialogPath = system.path.dirname(savePath);
+                  await this.context.plugin.saveSettings();
+                  system.fs.writeFileSync(savePath, new Uint8Array(data));
                   system.fs.unlinkSync(tempOutputPath);
+                  if (settings.deleteOriginalWebM && file.extension === "webm") {
+                    await app.fileManager.trashFile(file);
+                  }
                   resolve();
                   return;
                 }
-                settings.lastDialogPath = system.path.dirname(result.filePath);
-                await this.context.plugin.saveSettings();
-                system.fs.writeFileSync(result.filePath, data);
-                system.fs.unlinkSync(tempOutputPath);
-                if (settings.deleteOriginalWebM && file.extension === "webm") {
-                  await app.vault.trash(file, true);
-                }
-                resolve();
-                return;
+                default:
+                  finalVaultPath = file.path.replace(new RegExp(`\\.${file.extension}$`), `.${format}`);
               }
-              default:
-                finalVaultPath = file.path.replace(new RegExp(`\\.${file.extension}$`), `.${format}`);
+              const existingFile = app.vault.getAbstractFileByPath(finalVaultPath);
+              const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+              if (existingFile instanceof import_obsidian8.TFile) {
+                await app.vault.modifyBinary(existingFile, arrayBuffer);
+              } else {
+                await app.vault.createBinary(finalVaultPath, arrayBuffer);
+              }
+              if (settings.deleteOriginalWebM && file.extension === "webm") {
+                await app.fileManager.trashFile(file);
+              }
+              system.fs.unlinkSync(tempOutputPath);
+              resolve();
+            } catch (e) {
+              reject(e instanceof Error ? e : new Error(String(e)));
             }
-            const existingFile = app.vault.getAbstractFileByPath(finalVaultPath);
-            if (existingFile instanceof import_obsidian8.TFile) {
-              await app.vault.modifyBinary(existingFile, data.buffer);
-            } else {
-              await app.vault.createBinary(finalVaultPath, data.buffer);
-            }
-            if (settings.deleteOriginalWebM && file.extension === "webm") {
-              await app.vault.trash(file, true);
-            }
-            system.fs.unlinkSync(tempOutputPath);
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
+          })();
         } else {
           reject(new Error(`FFmpeg failed: ${stderr}`));
         }
@@ -2326,7 +2326,7 @@ var AudioModule = class {
   }
 };
 
-// main.ts
+// src/main.ts
 var AlchemistPlugin = class extends import_obsidian9.Plugin {
   constructor() {
     super(...arguments);
@@ -2334,7 +2334,6 @@ var AlchemistPlugin = class extends import_obsidian9.Plugin {
     this.systemAdapter = new ElectronSystemAdapter();
   }
   async onload() {
-    console.log("Loading Alchemist (Modular Purity Protocol)...");
     await this.loadSettings();
     this.addSettingTab(new AlchemistSettingTab(this.app, this));
     const context = {
@@ -2352,18 +2351,15 @@ var AlchemistPlugin = class extends import_obsidian9.Plugin {
     for (const module2 of this.modules) {
       try {
         await module2.load(context);
-        console.log(`Alchemist: Module [${module2.id}] loaded`);
       } catch (e) {
         console.error(`Alchemist: Failed to load module [${module2.id}]`, e);
       }
     }
-    console.log("Alchemist: Modular Purity Protocol initiated");
   }
-  async onunload() {
-    for (const module2 of this.modules) {
-      await module2.unload();
-    }
-    console.log("Alchemist: Modular Purity Protocol terminated");
+  onunload() {
+    this.modules.forEach((module2) => {
+      module2.unload().catch((e) => console.error(`Alchemist: Error unloading module [${module2.id}]`, e));
+    });
   }
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());

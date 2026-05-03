@@ -1,13 +1,13 @@
 import { Plugin } from 'obsidian';
 import { AlchemistSettings, DEFAULT_SETTINGS, AlchemistSettingTab } from './settings';
-import { IAlchemistModule, AlchemistContext } from './src/core/IAlchemistModule';
-import { ElectronSystemAdapter } from './src/core/SystemAdapter';
+import { IAlchemistModule, AlchemistContext } from './core/IAlchemistModule';
+import { ElectronSystemAdapter } from './core/SystemAdapter';
 
 // Modules
-import { TextBundleModule } from './src/features/textbundle/TextBundleModule';
-import { SmartPasteModule } from './src/features/paste-cleaner/SmartPasteModule';
-import { DataviewModule } from './src/features/dataview-export/DataviewModule';
-import { AudioModule } from './src/features/audio-converter/AudioModule';
+import { TextBundleModule } from './features/textbundle/TextBundleModule';
+import { SmartPasteModule } from './features/paste-cleaner/SmartPasteModule';
+import { DataviewModule } from './features/dataview-export/DataviewModule';
+import { AudioModule } from './features/audio-converter/AudioModule';
 
 export default class AlchemistPlugin extends Plugin {
     settings!: AlchemistSettings;
@@ -15,7 +15,6 @@ export default class AlchemistPlugin extends Plugin {
     private systemAdapter = new ElectronSystemAdapter();
 
     async onload() {
-        console.log('Loading Alchemist (Modular Purity Protocol)...');
         await this.loadSettings();
         this.addSettingTab(new AlchemistSettingTab(this.app, this));
 
@@ -37,24 +36,22 @@ export default class AlchemistPlugin extends Plugin {
         for (const module of this.modules) {
             try {
                 await module.load(context);
-                console.log(`Alchemist: Module [${module.id}] loaded`);
             } catch (e) {
                 console.error(`Alchemist: Failed to load module [${module.id}]`, e);
             }
         }
-
-        console.log('Alchemist: Modular Purity Protocol initiated');
     }
 
-    async onunload() {
-        for (const module of this.modules) {
-            await module.unload();
-        }
-        console.log('Alchemist: Modular Purity Protocol terminated');
+    onunload() {
+        // Use Promise.all to handle cleanup if needed, 
+        // but Plugin.onunload is expected to be synchronous or non-blocking.
+        this.modules.forEach(module => {
+            module.unload().catch(e => console.error(`Alchemist: Error unloading module [${module.id}]`, e));
+        });
     }
 
     async loadSettings() {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as AlchemistSettings);
     }
 
     async saveSettings() {

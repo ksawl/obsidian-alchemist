@@ -1,4 +1,4 @@
-import { TFile, App, normalizePath } from 'obsidian';
+import { TFile, App } from 'obsidian';
 import * as fflate from 'fflate';
 import { TextBundleContext } from './collector';
 import { transformMarkdownLinks, LinkResolver } from './logic';
@@ -14,7 +14,7 @@ export class TextBundlePacker {
      * Zips the context into a TextBundle (single) or TextPack (multiple bundles) blob.
      */
     async pack(context: TextBundleContext): Promise<Uint8Array> {
-        const zipData: any = {};
+        const zipData: fflate.Zippable = {};
 
         if (context.notes.length === 1) {
             // Standard TextBundle (flat structure)
@@ -27,7 +27,7 @@ export class TextBundlePacker {
 
             // First pass: generate unique names
             for (const note of context.notes) {
-                let baseName = note.basename;
+                const baseName = note.basename;
                 let bundleName = `${baseName}.textbundle`;
                 let counter = 1;
                 while (usedNames.has(bundleName)) {
@@ -41,7 +41,7 @@ export class TextBundlePacker {
             // Second pass: build data
             for (const note of context.notes) {
                 const bundleName = bundleMap.get(note.path)!;
-                const bundleData: any = {};
+                const bundleData: fflate.Zippable = {};
                 await this.buildBundleData(note, context, bundleData, "", bundleMap);
                 zipData[bundleName] = bundleData;
             }
@@ -58,8 +58,8 @@ export class TextBundlePacker {
     /**
      * Builds the internal structure of a single TextBundle.
      */
-    private async buildBundleData(note: TFile, context: TextBundleContext, target: any, prefix: string, bundleMap?: Map<string, string>) {
-        // 1. info.json (with Traceability — PLAN.md line 59)
+    private async buildBundleData(note: TFile, context: TextBundleContext, target: fflate.Zippable, prefix: string, bundleMap?: Map<string, string>) {
+        // 1. info.json (with Traceability)
         const info = {
             "version": 2,
             "type": "net.daringfireball.markdown",
@@ -71,7 +71,7 @@ export class TextBundlePacker {
         target[`${prefix}info.json`] = fflate.strToU8(JSON.stringify(info, null, 2));
 
         // 2. assets
-        const assetsObj: any = {};
+        const assetsObj: fflate.Zippable = {};
         const contentRaw = await this.app.vault.read(note);
         
         // Find which assets are actually used in THIS note

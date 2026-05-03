@@ -16,7 +16,7 @@ export function transformMarkdownLinks(
     resolver: LinkResolver
 ): string {
     // 1. Transform Embeds ![[link]] or ![[link|alias]]
-    content = content.replace(/!\[\[([^\]]+)\]\]/g, (match, link) => {
+    content = content.replace(/!\[\[([^\]]+)\]\]/g, (match: string, link: string) => {
         const [path, alias] = link.split('|');
         const resolvedName = resolver.resolveAsset(path);
         
@@ -27,7 +27,7 @@ export function transformMarkdownLinks(
     });
 
     // 2. Transform Regular Links [[link]] or [[link|alias]]
-    content = content.replace(/\[\[([^\]]+)\]\]/g, (match, link) => {
+    content = content.replace(/\[\[([^\]]+)\]\]/g, (match: string, link: string) => {
         const [path, alias] = link.split('|');
         
         // 1. Try resolving as another note in TextPack FIRST
@@ -61,24 +61,23 @@ export function reverseTransformLinks(
     content: string, 
     assetsFolder: string
 ): string {
-    const assetsPrefix = 'assets/';
     const targetPrefix = assetsFolder ? `${assetsFolder}/` : '';
 
     // 1. Embeds: ![alt](assets/filename) -> ![[targetPrefix/filename|alt]]
-    content = content.replace(/!\[([^\]]*)\]\(assets\/([^\)]+)\)/g, (match, alt, filename) => {
+    content = content.replace(/!\[([^\]]*)\]\(assets\/([^)]+)\)/g, (_match: string, alt: string, filename: string) => {
         const isRedundant = alt === filename;
         return (alt && !isRedundant) ? `![[${targetPrefix}${filename}|${alt}]]` : `![[${targetPrefix}${filename}]]`;
     });
 
     // 2. Links: [text](assets/filename) -> [[targetPrefix/filename|text]]
-    content = content.replace(/\[([^\]]+)\]\(assets\/([^\)]+)\)/g, (match, text, filename) => {
+    content = content.replace(/\[([^\]]+)\]\(assets\/([^)]+)\)/g, (_match: string, text: string, filename: string) => {
         const isRedundant = text === filename;
         return (text && !isRedundant) ? `[[${targetPrefix}${filename}|${text}]]` : `[[${targetPrefix}${filename}]]`;
     });
 
 
     // 3. Cross-Bundle Links: [Label](../BundleName.textbundle/text.md) -> [[NoteName|Label]]
-    content = content.replace(/\[([^\]]+)\]\(\.\.\/([^/]+)\/text\.(md|markdown|txt)\)/g, (match, text, folderName) => {
+    content = content.replace(/\[([^\]]+)\]\(\.\.\/([^/]+)\/text\.(md|markdown|txt)\)/g, (_match: string, text: string, folderName: string) => {
         const decodedBundle = decodeURIComponent(folderName);
         const bundleBase = decodedBundle.replace(/\.textbundle$/i, '');
         // Handle collision suffixes like "Note (1)"
@@ -89,4 +88,3 @@ export function reverseTransformLinks(
 
     return content;
 }
-

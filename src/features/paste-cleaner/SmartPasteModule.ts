@@ -1,7 +1,7 @@
-import { Editor, htmlToMarkdown, Notice } from 'obsidian';
+import { Editor, Notice } from 'obsidian';
 import { IAlchemistModule, AlchemistContext } from '../../core/IAlchemistModule';
-import { AlchemistSettings } from '../../../settings';
-import { containsTrackers, stripTrackers, purifyHtmlStructure } from './logic';
+import { AlchemistSettings } from '../../settings';
+import { stripTrackers } from './logic';
 
 export class SmartPasteModule implements IAlchemistModule {
     public id = 'smart-paste';
@@ -30,9 +30,9 @@ export class SmartPasteModule implements IAlchemistModule {
                 const cleaned = stripTrackers(content);
                 if (content !== cleaned) {
                     editor.setValue(cleaned);
-                    new Notice('Alchemist: Document cleaned from trackers');
+                    new Notice('Document cleaned from trackers');
                 } else {
-                    new Notice('Alchemist: No trackers found');
+                    new Notice('No trackers found');
                 }
             }
         });
@@ -40,7 +40,8 @@ export class SmartPasteModule implements IAlchemistModule {
 
     private registerPasteHandler() {
         this.context.plugin.registerEvent(
-            this.context.app.workspace.on('editor-paste', async (evt: ClipboardEvent, editor: Editor) => {
+            this.context.app.workspace.on('editor-paste', (evt: ClipboardEvent, editor: Editor) => {
+                if (evt.defaultPrevented) return;
                 if (!this.context.settings.enableSmartPaste) return;
 
                 const clipboardData = evt.clipboardData;
@@ -55,7 +56,7 @@ export class SmartPasteModule implements IAlchemistModule {
                     if (cleanUrl !== text) {
                         evt.preventDefault();
                         editor.replaceSelection(cleanUrl);
-                        new Notice('Alchemist: URL cleaned');
+                        new Notice('URL cleaned');
                     }
                 }
                 

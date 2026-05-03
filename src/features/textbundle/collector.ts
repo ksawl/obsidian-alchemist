@@ -1,5 +1,5 @@
 import { TFile, App } from 'obsidian';
-import { AlchemistSettings } from '../../../settings';
+import { AlchemistSettings } from '../../settings';
 
 export interface TextBundleContext {
     visitedFiles: Set<string>;

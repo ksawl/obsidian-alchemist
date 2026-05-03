@@ -1,10 +1,17 @@
-import { AlchemistSettings } from '../../settings';
+import { App, Plugin } from 'obsidian';
+import type { OpenDialogOptions, OpenDialogReturnValue, SaveDialogOptions, SaveDialogReturnValue } from 'electron';
+import { AlchemistSettings } from '../settings';
+
+export interface IAlchemistPlugin extends Plugin {
+    settings: AlchemistSettings;
+    saveSettings(): Promise<void>;
+}
 
 export interface AlchemistContext {
-    app: any; // Obsidian App
+    app: App;
     settings: AlchemistSettings;
     system: ISystemAdapter;
-    plugin: any; // AlchemistPlugin
+    plugin: IAlchemistPlugin;
 }
 
 export interface IAlchemistModule {
@@ -15,9 +22,10 @@ export interface IAlchemistModule {
 }
 
 export interface ISystemAdapter {
-    fs: any;
-    path: any;
-    os: any;
-    showSaveDialog(options: any): Promise<{ canceled: boolean; filePath?: string }>;
-    showOpenDialog(options: any): Promise<{ canceled: boolean; filePaths: string[] }>;
+    fs: typeof import('fs');
+    path: typeof import('path');
+    os: typeof import('os');
+    spawn: typeof import('child_process').spawn;
+    showSaveDialog(options: SaveDialogOptions): Promise<SaveDialogReturnValue>;
+    showOpenDialog(options: OpenDialogOptions): Promise<OpenDialogReturnValue>;
 }

@@ -27,10 +27,10 @@
     ]
   },
   "include": [
-    "**/*.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "**/__tests__/**"
+    "src/**/__tests__/**"
   ]
 }

@@ -1,6 +1,6 @@
-import { TFile, TFolder, Notice } from 'obsidian';
+import { TFile, TFolder, Notice, Menu, TAbstractFile, MenuItem } from 'obsidian';
 import { IAlchemistModule, AlchemistContext } from '../../core/IAlchemistModule';
-import { AlchemistSettings } from '../../../settings';
+import { AlchemistSettings } from '../../settings';
 import { TextBundleFeature } from './collector';
 import { TextBundlePacker } from './packer';
 import { TextBundleImporter } from './importer';
@@ -33,33 +33,35 @@ export class TextBundleModule implements IAlchemistModule {
     }
 
     private registerRibbonIcons() {
-        this.context.plugin.addRibbonIcon('package-plus', 'Alchemist: Import TextBundle', () => {
+        this.context.plugin.addRibbonIcon('package-plus', 'Import textbundle', () => {
             if (!this.context.settings.enableTextBundle) {
-                new Notice('TextBundle module is disabled in settings.');
+                new Notice('Textbundle module is disabled in settings.');
                 return;
             }
-            this.runImport();
+            void this.runImport();
         });
     }
 
     private registerCommands() {
         this.context.plugin.addCommand({
             id: 'import-textbundle',
-            name: 'Import TextBundle',
+            name: 'Import textbundle',
             callback: () => {
                 if (!this.context.settings.enableTextBundle) return;
-                this.runImport();
+                void this.runImport();
             }
         });
 
         this.context.plugin.addCommand({
             id: 'export-current-textbundle',
-            name: 'Export current file as TextBundle',
+            name: 'Export current file as textbundle',
             checkCallback: (checking: boolean) => {
                 if (!this.context.settings.enableTextBundle) return false;
                 const activeFile = this.context.app.workspace.getActiveFile();
                 if (activeFile) {
-                    if (!checking) this.runExport(activeFile);
+                    if (!checking) {
+                        void this.runExport(activeFile);
+                    }
                     return true;
                 }
                 return false;
@@ -69,37 +71,39 @@ export class TextBundleModule implements IAlchemistModule {
 
     private registerEvents() {
         this.context.plugin.registerEvent(
-            this.context.app.workspace.on('file-menu', (menu: any, abstractFile: any) => {
+            this.context.app.workspace.on('file-menu', (menu: Menu, abstractFile: TAbstractFile) => {
                 if (!this.context.settings.enableTextBundle) return;
 
                 if (abstractFile instanceof TFile && abstractFile.extension === 'md') {
-                    menu.addItem((item: any) => {
+                    menu.addItem((item: MenuItem) => {
                         item
-                            .setTitle('Alchemist: Export as TextBundle')
+                            .setTitle('Export as textbundle')
                             .setIcon('package')
-                            .onClick(() => this.runExport(abstractFile));
+                            .onClick(() => {
+                                void this.runExport(abstractFile);
+                            });
                     });
                 } else if (abstractFile instanceof TFolder) {
-                    menu.addItem((item: any) => {
+                    menu.addItem((item: MenuItem) => {
                         item
-                            .setTitle('Alchemist: Export folder as TextBundle')
+                            .setTitle('Export folder as textbundle')
                             .setIcon('package')
                             .onClick(async () => {
                                 const files: TFile[] = [];
-                                const collect = (f: any) => {
+                                const collect = (f: TAbstractFile) => {
                                     if (f instanceof TFile && f.extension === 'md') files.push(f);
                                     else if (f instanceof TFolder) f.children.forEach(collect);
                                 };
                                 collect(abstractFile);
                                 
                                 if (files.length === 0) {
-                                    new Notice('No markdown files found in this folder.');
+                                    new Notice('No Markdown files found in this folder.');
                                     return;
                                 }
 
                                 // Bulk Export Strategy: Ask for a folder once
                                 const result = await this.context.system.showOpenDialog({
-                                    title: 'Select Destination for Bulk Export',
+                                    title: 'Select destination for bulk export',
                                     defaultPath: this.context.settings.lastDialogPath,
                                     properties: ['openDirectory', 'createDirectory']
                                 });
@@ -109,7 +113,7 @@ export class TextBundleModule implements IAlchemistModule {
                                     this.context.settings.lastDialogPath = targetDir;
                                     await this.context.plugin.saveSettings();
 
-                                    new Notice(`Bulk Exporting ${files.length} notes...`);
+                                    new Notice(`Bulk exporting ${files.length} notes...`);
                                     let successCount = 0;
                                     for (const f of files) {
                                         try {
@@ -118,7 +122,7 @@ export class TextBundleModule implements IAlchemistModule {
                                             const extension = this.context.settings.compressionFormat || 'textbundle';
                                             const fullPath = this.context.system.path.join(targetDir, `${f.basename}.${extension}`);
                                             
-                                            this.context.system.fs.writeFileSync(fullPath, Buffer.from(blob));
+                                            this.context.system.fs.writeFileSync(fullPath, new Uint8Array(blob));
                                             successCount++;
                                         } catch (e) {
                                             console.error(`Export failed for ${f.name}:`, e);
@@ -129,11 +133,13 @@ export class TextBundleModule implements IAlchemistModule {
                             });
                     });
 
-                    menu.addItem((item: any) => {
+                    menu.addItem((item: MenuItem) => {
                         item
-                            .setTitle('Alchemist: Import into here')
+                            .setTitle('Import into here')
                             .setIcon('package-plus')
-                            .onClick(() => this.runImport(abstractFile.path));
+                            .onClick(() => {
+                                void this.runImport(abstractFile.path);
+                            });
                     });
                 }
             })
@@ -142,9 +148,9 @@ export class TextBundleModule implements IAlchemistModule {
 
     private async runImport(targetPath?: string) {
         const result = await this.context.system.showOpenDialog({
-            title: targetPath ? `Import into ${targetPath}` : 'Import TextBundle',
+            title: targetPath ? `Import into ${targetPath}` : 'Import textbundle',
             defaultPath: this.context.settings.lastDialogPath,
-            filters: [{ name: 'TextBundle', extensions: ['textbundle', 'zip', 'textpack'] }],
+            filters: [{ name: 'Textbundle', extensions: ['textbundle', 'zip', 'textpack'] }],
             properties: ['openFile']
         });
 
@@ -156,8 +162,10 @@ export class TextBundleModule implements IAlchemistModule {
             
             try {
                 const data = this.context.system.fs.readFileSync(filePath);
-                await this.importer.importZip(data, targetPath, sourceName);
-                new Notice('Successfully imported TextBundle');
+                // Convert Node Buffer to ArrayBuffer
+                const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+                await this.importer.importZip(arrayBuffer, targetPath, sourceName);
+                new Notice('Successfully imported textbundle');
             } catch (e) {
                 console.error('Alchemist Import Error:', e);
                 new Notice(`Import failed: ${(e as Error).message}`);
@@ -172,15 +180,15 @@ export class TextBundleModule implements IAlchemistModule {
             const extension = this.context.settings.compressionFormat || 'textbundle';
 
             const result = await this.context.system.showSaveDialog({
-                title: 'Save TextBundle',
+                title: 'Save textbundle',
                 defaultPath: this.context.system.path.join(this.context.settings.lastDialogPath, `${file.basename}.${extension}`),
-                filters: [{ name: 'TextBundle', extensions: [extension, 'zip'] }]
+                filters: [{ name: 'Textbundle', extensions: [extension, 'zip'] }]
             });
 
             if (!result.canceled && result.filePath) {
                 this.context.settings.lastDialogPath = this.context.system.path.dirname(result.filePath);
                 await this.context.plugin.saveSettings();
-                this.context.system.fs.writeFileSync(result.filePath, Buffer.from(blob));
+                this.context.system.fs.writeFileSync(result.filePath, new Uint8Array(blob));
                 new Notice(`Successfully exported: ${file.basename}`);
             }
         } catch (e) {

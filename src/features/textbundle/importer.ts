@@ -1,8 +1,17 @@
-import { App, TFile, TFolder, normalizePath, Notice } from 'obsidian';
+import { App, TFile, normalizePath, Notice } from 'obsidian';
 import * as fflate from 'fflate';
-import { AlchemistSettings } from '../../../settings';
+import { AlchemistSettings } from '../../settings';
 import { ISystemAdapter } from '../../core/IAlchemistModule';
 import { reverseTransformLinks } from './logic';
+
+interface TextBundleInfo {
+    title?: string;
+    origin_path?: string;
+}
+
+interface VaultWithConfig {
+    getConfig(key: string): unknown;
+}
 
 export class TextBundleImporter {
     app: App;
@@ -22,10 +31,10 @@ export class TextBundleImporter {
         try {
             const unzipped = fflate.unzipSync(new Uint8Array(data));
             await this.processUnzipped(unzipped, targetPath, sourceName);
-            new Notice('Alchemist: Import successful');
+            new Notice('Import successful');
         } catch (e) {
             console.error('Alchemist: Import failed', e);
-            new Notice('Alchemist: Import failed. Check console for details.');
+            new Notice('Import failed. Check console for details.');
         }
     }
 
@@ -44,7 +53,7 @@ export class TextBundleImporter {
             await this.importSingleBundle(unzipped, targetPath, sourceName);
         } else {
             // TextPack structure
-            new Notice(`Alchemist: Importing ${bundleFolders.size} notes from TextPack...`);
+            new Notice(`Importing ${bundleFolders.size} notes from textpack...`);
             for (const folder of bundleFolders) {
                 const prefix = `${folder}/`;
                 const bundleFiles: Record<string, Uint8Array> = {};
@@ -81,7 +90,7 @@ export class TextBundleImporter {
         const infoKey = allKeys.find(k => k === 'info.json');
         if (infoKey) {
             try {
-                const info = JSON.parse(fflate.strFromU8(files[infoKey]));
+                const info = JSON.parse(fflate.strFromU8(files[infoKey])) as TextBundleInfo;
                 if (info.title) noteName = `${info.title}.md`;
                 
                 if (info.origin_path && this.settings.restoreFolderStructure) {
@@ -90,7 +99,9 @@ export class TextBundleImporter {
                         finalImportFolder = normalizePath(`${importRoot}/${relativeDir}`);
                     }
                 }
-            } catch (e) {}
+            } catch {
+                // Ignore parsing errors
+            }
         }
 
         await this.ensureFolder(finalImportFolder);
@@ -120,7 +131,7 @@ export class TextBundleImporter {
         for (const [oldName, newName] of assetRenameMap.entries()) {
             const escapedOldName = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const linkRegex = new RegExp(`\\[\\[${assetsFolderName}/${escapedOldName}(\\|[^\\]]+)?\\]\\]`, 'g');
-            content = content.replace(linkRegex, (match, alias) => {
+            content = content.replace(linkRegex, (_match, alias: string | undefined) => {
                 return `[[${assetsFolderName}/${newName}${alias || ''}]]`;
             });
         }
@@ -206,7 +217,10 @@ export class TextBundleImporter {
     }
 
     private getAttachmentFolder(): string {
-        return (this.app.vault as any).getConfig?.('attachmentFolderPath') || '';
+        const vault = this.app.vault as unknown as VaultWithConfig;
+        if (typeof vault.getConfig === 'function') {
+            return (vault.getConfig('attachmentFolderPath') as string) || '';
+        }
+        return '';
     }
 }
-

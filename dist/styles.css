@@ -15,3 +15,43 @@
     opacity: 1;
     background: var(--interactive-accent-hover);
 }
+
+.alchemist-support-container {
+    text-align: center;
+    padding: 20px;
+}
+
+.alchemist-support-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.alchemist-donate-btn {
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.alchemist-kofi {
+    background: #29abe0;
+}
+
+.alchemist-boosty {
+    background: #f15f2c;
+}
+
+.alchemist-relative-container {
+    position: relative;
+}
+
+.alchemist-export-btn {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    z-index: 100;
+    font-size: 0.7em;
+    opacity: 0.6;
+}

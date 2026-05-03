@@ -1,7 +1,6 @@
-import { TFile, TFolder, Notice, normalizePath, FileSystemAdapter } from 'obsidian';
-import { spawn } from 'child_process';
+import { TFile, TFolder, Notice, normalizePath, FileSystemAdapter, Menu, TAbstractFile, MenuItem } from 'obsidian';
 import { IAlchemistModule, AlchemistContext } from '../../core/IAlchemistModule';
-import { AlchemistSettings } from '../../../settings';
+import { AlchemistSettings } from '../../settings';
 import { getFfmpegArgs, AudioMetadata } from './logic';
 
 export class AudioModule implements IAlchemistModule {
@@ -29,11 +28,11 @@ export class AudioModule implements IAlchemistModule {
 
         // Handler for single file or folder
         this.context.plugin.registerEvent(
-            this.context.app.workspace.on('file-menu', (menu: any, abstractFile: any) => {
+            this.context.app.workspace.on('file-menu', (menu: Menu, abstractFile: TAbstractFile) => {
                 if (!this.context.settings.enableAudioConverter) return;
                 const format = (this.context.settings.defaultAudioOutputFormat || 'mp3').toLowerCase();
 
-                let audioFiles: TFile[] = [];
+                const audioFiles: TFile[] = [];
 
                 if (abstractFile instanceof TFile) {
                     const ext = abstractFile.extension.toLowerCase();
@@ -41,14 +40,14 @@ export class AudioModule implements IAlchemistModule {
                         audioFiles.push(abstractFile);
                     }
                 } else if (abstractFile instanceof TFolder) {
-                    const collect = (f: any) => {
+                    const collect = (f: TAbstractFile) => {
                         if (f instanceof TFile) {
                             const ext = f.extension.toLowerCase();
                             if (audioExtensions.includes(ext) && ext !== format) {
                                 audioFiles.push(f);
                             }
                         } else if (f instanceof TFolder) {
-                            f.children.forEach((child: any) => collect(child));
+                            f.children.forEach((child: TAbstractFile) => collect(child));
                         }
                     };
                     collect(abstractFile);
@@ -56,22 +55,24 @@ export class AudioModule implements IAlchemistModule {
 
                 if (audioFiles.length === 0) return;
 
-                menu.addItem((item: any) => {
+                menu.addItem((item: MenuItem) => {
                     const title = audioFiles.length === 1 
-                        ? `Alchemist: Convert to ${format.toUpperCase()}` 
-                        : `Alchemist: Convert folder (${audioFiles.length} files) to ${format.toUpperCase()}`;
+                        ? `Convert to ${format.toUpperCase()}` 
+                        : `Convert folder (${audioFiles.length} files) to ${format.toUpperCase()}`;
                     
                     item
                         .setTitle(title)
                         .setIcon('music')
-                        .onClick(() => this.runConversion(audioFiles, format));
+                        .onClick(() => {
+                            void this.runConversion(audioFiles, format);
+                        });
                 });
             })
         );
 
         // Handler for multiple selection
         this.context.plugin.registerEvent(
-            this.context.app.workspace.on('files-menu', (menu: any, files: any[]) => {
+            this.context.app.workspace.on('files-menu', (menu: Menu, files: TAbstractFile[]) => {
                 if (!this.context.settings.enableAudioConverter) return;
                 const format = (this.context.settings.defaultAudioOutputFormat || 'mp3').toLowerCase();
 
@@ -83,11 +84,13 @@ export class AudioModule implements IAlchemistModule {
 
                 if (audioFiles.length <= 1) return; // Single file handled by file-menu
 
-                menu.addItem((item: any) => {
+                menu.addItem((item: MenuItem) => {
                     item
-                        .setTitle(`Alchemist: Convert selected (${audioFiles.length} files) to ${format.toUpperCase()}`)
+                        .setTitle(`Convert selected (${audioFiles.length} files) to ${format.toUpperCase()}`)
                         .setIcon('music')
-                        .onClick(() => this.runConversion(audioFiles, format));
+                        .onClick(() => {
+                            void this.runConversion(audioFiles, format);
+                        });
                 });
             })
         );
@@ -106,7 +109,7 @@ export class AudioModule implements IAlchemistModule {
             this.updateStatus(processed, total);
         }
 
-        new Notice(`Alchemist: Converting ${total} file(s)...`);
+        new Notice(`Converting ${total} file(s)...`);
 
         for (const file of files) {
             try {
@@ -121,7 +124,7 @@ export class AudioModule implements IAlchemistModule {
         }
 
         if (this.statusBarItem) this.statusBarItem.hide();
-        new Notice(`Alchemist: Finished processing ${processed}/${total} files.`);
+        new Notice(`Finished processing ${processed}/${total} files.`);
     }
 
     private updateStatus(current: number, total: number) {
@@ -147,10 +150,10 @@ export class AudioModule implements IAlchemistModule {
             const frontmatter = cache?.frontmatter;
 
             if (frontmatter) {
-                if (frontmatter.title) metadata.title = frontmatter.title;
-                if (frontmatter.artist) metadata.artist = frontmatter.artist;
-                if (frontmatter.album) metadata.album = frontmatter.album;
-                if (frontmatter.genre) metadata.genre = frontmatter.genre;
+                if (frontmatter.title) metadata.title = String(frontmatter.title);
+                if (frontmatter.artist) metadata.artist = String(frontmatter.artist);
+                if (frontmatter.album) metadata.album = String(frontmatter.album);
+                if (frontmatter.genre) metadata.genre = String(frontmatter.genre);
                 
                 // Date logic: date > creation_date > now
                 if (frontmatter.date) metadata.date = String(frontmatter.date);
@@ -159,7 +162,7 @@ export class AudioModule implements IAlchemistModule {
                 // Fallback for tags -> genre
                 if (!frontmatter.genre && frontmatter.tags) {
                     const tags = Array.isArray(frontmatter.tags) ? frontmatter.tags : [frontmatter.tags];
-                    if (tags.length > 0) metadata.genre = tags[0];
+                    if (tags.length > 0) metadata.genre = String(tags[0]);
                 }
             }
 
@@ -175,8 +178,8 @@ export class AudioModule implements IAlchemistModule {
         return metadata;
     }
 
-    private async convert(file: TFile, format: string, metadata: AudioMetadata): Promise<void> {
-        return new Promise(async (resolve, reject) => {
+    private convert(file: TFile, format: string, metadata: AudioMetadata): Promise<void> {
+        return new Promise((resolve, reject) => {
             const system = this.context.system;
             const app = this.context.app;
             const settings = this.context.settings;
@@ -188,69 +191,73 @@ export class AudioModule implements IAlchemistModule {
             const tempOutputPath = system.path.join(system.os.tmpdir(), `alchemist_${Date.now()}.${format}`);
             const args = getFfmpegArgs(inputPath, tempOutputPath, format, metadata);
 
-            const child = spawn('ffmpeg', args);
+            const child = system.spawn('ffmpeg', args);
             
             let stderr = '';
-            child.stderr.on('data', (data) => { stderr += data.toString(); });
+            child.stderr?.on('data', (data: Buffer | string) => { stderr += data.toString(); });
 
-            child.on('close', async (code) => {
+            child.on('close', (code) => {
                 if (code === 0) {
-                    try {
-                        const data = system.fs.readFileSync(tempOutputPath);
-                        const outputName = file.basename + '.' + format;
-                        let finalVaultPath: string;
+                    void (async () => {
+                        try {
+                            const data = system.fs.readFileSync(tempOutputPath);
+                            const outputName = file.basename + '.' + format;
+                            let finalVaultPath: string;
 
-                        switch (settings.targetFolderStrategy) {
-                            case 'specific': {
-                                const folder = settings.specificTargetFolder || '';
-                                finalVaultPath = normalizePath(`${folder}/${outputName}`);
-                                if (folder) {
-                                    const existing = app.vault.getAbstractFileByPath(folder);
-                                    if (!existing) await app.vault.createFolder(folder);
+                            switch (settings.targetFolderStrategy) {
+                                case 'specific': {
+                                    const folder = settings.specificTargetFolder || '';
+                                    finalVaultPath = normalizePath(`${folder}/${outputName}`);
+                                    if (folder) {
+                                        const existing = app.vault.getAbstractFileByPath(folder);
+                                        if (!existing) await app.vault.createFolder(folder);
+                                    }
+                                    break;
                                 }
-                                break;
-                            }
-                            case 'dialog': {
-                                const result = await system.showSaveDialog({
-                                    title: 'Save Converted Audio',
-                                    defaultPath: system.path.join(settings.lastDialogPath, outputName),
-                                    filters: [{ name: format.toUpperCase(), extensions: [format] }]
-                                });
-                                if (result.canceled || !result.filePath) {
+                                case 'dialog': {
+                                    const result = await system.showOpenDialog({
+                                        title: 'Save converted audio',
+                                        defaultPath: system.path.join(settings.lastDialogPath, outputName),
+                                        properties: ['openFile', 'promptToCreate']
+                                    });
+                                    if (result.canceled || result.filePaths.length === 0) {
+                                        system.fs.unlinkSync(tempOutputPath);
+                                        resolve();
+                                        return;
+                                    }
+                                    const savePath = result.filePaths[0];
+                                    settings.lastDialogPath = system.path.dirname(savePath);
+                                    await this.context.plugin.saveSettings();
+                                    system.fs.writeFileSync(savePath, new Uint8Array(data));
                                     system.fs.unlinkSync(tempOutputPath);
+                                    if (settings.deleteOriginalWebM && file.extension === 'webm') {
+                                        await app.fileManager.trashFile(file);
+                                    }
                                     resolve();
                                     return;
                                 }
-                                settings.lastDialogPath = system.path.dirname(result.filePath);
-                                await this.context.plugin.saveSettings();
-                                system.fs.writeFileSync(result.filePath, data);
-                                system.fs.unlinkSync(tempOutputPath);
-                                if (settings.deleteOriginalWebM && file.extension === 'webm') {
-                                    await app.vault.trash(file, true);
-                                }
-                                resolve();
-                                return;
+                                default: // 'source'
+                                    finalVaultPath = file.path.replace(new RegExp(`\\.${file.extension}$`), `.${format}`);
                             }
-                            default: // 'source'
-                                finalVaultPath = file.path.replace(new RegExp(`\\.${file.extension}$`), `.${format}`);
-                        }
-                        
-                        const existingFile = app.vault.getAbstractFileByPath(finalVaultPath);
-                        if (existingFile instanceof TFile) {
-                            await app.vault.modifyBinary(existingFile, data.buffer);
-                        } else {
-                            await app.vault.createBinary(finalVaultPath, data.buffer);
-                        }
+                            
+                            const existingFile = app.vault.getAbstractFileByPath(finalVaultPath);
+                            const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+                            if (existingFile instanceof TFile) {
+                                await app.vault.modifyBinary(existingFile, arrayBuffer);
+                            } else {
+                                await app.vault.createBinary(finalVaultPath, arrayBuffer);
+                            }
 
-                        if (settings.deleteOriginalWebM && file.extension === 'webm') {
-                            await app.vault.trash(file, true);
+                            if (settings.deleteOriginalWebM && file.extension === 'webm') {
+                                await app.fileManager.trashFile(file);
+                            }
+                            
+                            system.fs.unlinkSync(tempOutputPath);
+                            resolve();
+                        } catch (e) {
+                            reject(e instanceof Error ? e : new Error(String(e)));
                         }
-                        
-                        system.fs.unlinkSync(tempOutputPath);
-                        resolve();
-                    } catch (e) {
-                        reject(e);
-                    }
+                    })();
                 } else {
                     reject(new Error(`FFmpeg failed: ${stderr}`));
                 }
