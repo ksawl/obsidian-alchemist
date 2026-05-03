@@ -1,7 +1,7 @@
 {
-  "name": "obsidian-alchemist",
+  "name": "alchemist",
   "version": "0.1.0",
-  "description": "The Alchemist: A modular super-plugin for TextBundle, Audio conversion, and Data purity.",
+  "description": "Modular super-plugin for TextBundle, Audio conversion, and Dataview exports.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
