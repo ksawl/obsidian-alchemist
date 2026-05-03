@@ -66,13 +66,12 @@ var AlchemistSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    new import_obsidian.Setting(containerEl).setName("General settings").setHeading();
     new import_obsidian.Setting(containerEl).setName("Enable textbundle").setDesc("Enable support for .textbundle and .textpack formats.").addToggle((toggle) => toggle.setValue(this.plugin.settings.enableTextBundle).onChange(async (value) => {
       this.plugin.settings.enableTextBundle = value;
       await this.plugin.saveSettings();
       this.display();
     }));
-    new import_obsidian.Setting(containerEl).setName("Enable audio converter").setDesc("Enable context menu options to convert audio files via FFmpeg.").addToggle((toggle) => toggle.setValue(this.plugin.settings.enableAudioConverter).onChange(async (value) => {
+    new import_obsidian.Setting(containerEl).setName("Enable audio converter").setDesc("Enable context menu options to convert audio files via ffmpeg.").addToggle((toggle) => toggle.setValue(this.plugin.settings.enableAudioConverter).onChange(async (value) => {
       this.plugin.settings.enableAudioConverter = value;
       await this.plugin.saveSettings();
       this.display();
@@ -82,7 +81,7 @@ var AlchemistSettingTab = class extends import_obsidian.PluginSettingTab {
       await this.plugin.saveSettings();
       this.display();
     }));
-    new import_obsidian.Setting(containerEl).setName("Enable dataview export").setDesc("Add export buttons to Dataview tables.").addToggle((toggle) => toggle.setValue(this.plugin.settings.enableDataviewExport).onChange(async (value) => {
+    new import_obsidian.Setting(containerEl).setName("Enable dataview export").setDesc("Add export buttons to dataview tables.").addToggle((toggle) => toggle.setValue(this.plugin.settings.enableDataviewExport).onChange(async (value) => {
       this.plugin.settings.enableDataviewExport = value;
       await this.plugin.saveSettings();
       this.display();
@@ -185,8 +184,8 @@ var AlchemistSettingTab = class extends import_obsidian.PluginSettingTab {
       }
     }
     containerEl.createEl("hr");
-    const footer = containerEl.createEl("div", { cls: "alchemist-settings-footer" });
-    footer.createEl("span", { text: "The Alchemist: Crafted with love by Kharizma & Latreia " });
+    const footer = containerEl.createDiv({ cls: "alchemist-settings-footer" });
+    footer.createSpan({ text: "The alchemist: Crafted with love by kharizma & latreia " });
     const donateLink = footer.createEl("a", {
       text: "\u{1F496} Support development",
       href: "https://boosty.to/obsidian-alchemist"
