@@ -8,18 +8,18 @@ export class AudioModule implements IAlchemistModule {
     private context!: AlchemistContext;
     private statusBarItem: HTMLElement | null = null;
 
-    async load(context: AlchemistContext): Promise<void> {
+    load(context: AlchemistContext): void {
         this.context = context;
         this.statusBarItem = this.context.plugin.addStatusBarItem();
         if (this.statusBarItem) this.statusBarItem.hide();
         this.registerEvents();
     }
 
-    async unload(): Promise<void> {
+    unload(): void {
         // Events are cleaned up automatically
     }
 
-    async onSettingsChange(newSettings: AlchemistSettings): Promise<void> {
+    onSettingsChange(newSettings: AlchemistSettings): void {
         this.context.settings = newSettings;
     }
 

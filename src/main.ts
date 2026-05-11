@@ -43,11 +43,11 @@ export default class AlchemistPlugin extends Plugin {
     }
 
     onunload() {
-        // Use Promise.all to handle cleanup if needed, 
-        // but Plugin.onunload is expected to be synchronous or non-blocking.
-        this.modules.forEach(module => {
-            module.unload().catch(e => console.error(`Alchemist: Error unloading module [${module.id}]`, e));
-        });
+        this.modules.forEach(module =>
+            void Promise.resolve(module.unload()).catch(e =>
+                console.error(`Alchemist: Error unloading module [${module.id}]`, e)
+            )
+        );
     }
 
     async loadSettings() {
@@ -56,9 +56,8 @@ export default class AlchemistPlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
-        // Notify all modules about settings change
         for (const module of this.modules) {
-            await module.onSettingsChange(this.settings);
+            await Promise.resolve(module.onSettingsChange(this.settings));
         }
     }
 }

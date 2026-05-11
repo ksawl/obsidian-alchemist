@@ -357,7 +357,7 @@ export class AlchemistSettingTab extends PluginSettingTab {
         // --- FOOTER ---
         containerEl.createEl('hr');
         const footer = containerEl.createDiv({ cls: 'alchemist-settings-footer' });
-        footer.createSpan({ text: 'The alchemist: Crafted with love by kharizma & latreia ' });
+        footer.createSpan({ text: 'The alchemist: crafted with love by kharizma & latreia ' });
         
         const donateLink = footer.createEl('a', { 
             text: '💖 Support development',

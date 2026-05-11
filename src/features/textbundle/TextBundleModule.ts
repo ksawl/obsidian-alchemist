@@ -13,7 +13,7 @@ export class TextBundleModule implements IAlchemistModule {
     private packer!: TextBundlePacker;
     private importer!: TextBundleImporter;
 
-    async load(context: AlchemistContext): Promise<void> {
+    load(context: AlchemistContext): void {
         this.context = context;
         this.collector = new TextBundleFeature(context.app, context.settings);
         this.packer = new TextBundlePacker(context.app);
@@ -24,11 +24,11 @@ export class TextBundleModule implements IAlchemistModule {
         this.registerRibbonIcons();
     }
 
-    async unload(): Promise<void> {
+    unload(): void {
         // Clean up if necessary
     }
 
-    async onSettingsChange(newSettings: AlchemistSettings): Promise<void> {
+    onSettingsChange(newSettings: AlchemistSettings): void {
         this.context.settings = newSettings;
     }
 

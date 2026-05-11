@@ -185,7 +185,7 @@ var AlchemistSettingTab = class extends import_obsidian.PluginSettingTab {
     }
     containerEl.createEl("hr");
     const footer = containerEl.createDiv({ cls: "alchemist-settings-footer" });
-    footer.createSpan({ text: "The alchemist: Crafted with love by kharizma & latreia " });
+    footer.createSpan({ text: "The alchemist: crafted with love by kharizma & latreia " });
     const donateLink = footer.createEl("a", {
       text: "\u{1F496} Support development",
       href: "https://boosty.to/obsidian-alchemist"
@@ -1699,7 +1699,7 @@ var TextBundleModule = class {
   constructor() {
     this.id = "textbundle";
   }
-  async load(context) {
+  load(context) {
     this.context = context;
     this.collector = new TextBundleFeature(context.app, context.settings);
     this.packer = new TextBundlePacker(context.app);
@@ -1708,9 +1708,9 @@ var TextBundleModule = class {
     this.registerEvents();
     this.registerRibbonIcons();
   }
-  async unload() {
+  unload() {
   }
-  async onSettingsChange(newSettings) {
+  onSettingsChange(newSettings) {
     this.context.settings = newSettings;
   }
   registerRibbonIcons() {
@@ -1896,7 +1896,7 @@ function stripTrackers(input) {
         return urlObj.toString();
       }
       return url;
-    } catch (_e) {
+    } catch (e) {
       return url;
     }
   });
@@ -1907,14 +1907,14 @@ var SmartPasteModule = class {
   constructor() {
     this.id = "smart-paste";
   }
-  async load(context) {
+  load(context) {
     this.context = context;
     this.registerPasteHandler();
     this.registerCommands();
   }
-  async unload() {
+  unload() {
   }
-  async onSettingsChange(newSettings) {
+  onSettingsChange(newSettings) {
     this.context.settings = newSettings;
   }
   registerCommands() {
@@ -1979,15 +1979,15 @@ var DataviewModule = class {
     this.observer = null;
     this.injectTimeout = null;
   }
-  async load(context) {
+  load(context) {
     this.context = context;
     this.setupGlobalObserver();
     this.start();
   }
-  async unload() {
+  unload() {
     this.stop();
   }
-  async onSettingsChange(newSettings) {
+  onSettingsChange(newSettings) {
     const wasEnabled = this.context.settings.enableDataviewExport;
     this.context.settings = newSettings;
     if (wasEnabled !== newSettings.enableDataviewExport) {
@@ -2121,15 +2121,15 @@ var AudioModule = class {
     this.id = "audio-converter";
     this.statusBarItem = null;
   }
-  async load(context) {
+  load(context) {
     this.context = context;
     this.statusBarItem = this.context.plugin.addStatusBarItem();
     if (this.statusBarItem) this.statusBarItem.hide();
     this.registerEvents();
   }
-  async unload() {
+  unload() {
   }
-  async onSettingsChange(newSettings) {
+  onSettingsChange(newSettings) {
     this.context.settings = newSettings;
   }
   registerEvents() {
@@ -2356,9 +2356,11 @@ var AlchemistPlugin = class extends import_obsidian9.Plugin {
     }
   }
   onunload() {
-    this.modules.forEach((module2) => {
-      module2.unload().catch((e) => console.error(`Alchemist: Error unloading module [${module2.id}]`, e));
-    });
+    this.modules.forEach(
+      (module2) => void Promise.resolve(module2.unload()).catch(
+        (e) => console.error(`Alchemist: Error unloading module [${module2.id}]`, e)
+      )
+    );
   }
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -2366,7 +2368,7 @@ var AlchemistPlugin = class extends import_obsidian9.Plugin {
   async saveSettings() {
     await this.saveData(this.settings);
     for (const module2 of this.modules) {
-      await module2.onSettingsChange(this.settings);
+      await Promise.resolve(module2.onSettingsChange(this.settings));
     }
   }
 };

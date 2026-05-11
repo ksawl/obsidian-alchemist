@@ -7,17 +7,17 @@ export class SmartPasteModule implements IAlchemistModule {
     public id = 'smart-paste';
     private context!: AlchemistContext;
 
-    async load(context: AlchemistContext): Promise<void> {
+    load(context: AlchemistContext): void {
         this.context = context;
         this.registerPasteHandler();
         this.registerCommands();
     }
 
-    async unload(): Promise<void> {
+    unload(): void {
         // Commands and events are automatically cleaned up if registered via plugin
     }
 
-    async onSettingsChange(newSettings: AlchemistSettings): Promise<void> {
+    onSettingsChange(newSettings: AlchemistSettings): void {
         this.context.settings = newSettings;
     }
 

@@ -15,17 +15,17 @@ export class DataviewModule implements IAlchemistModule {
     private observer: MutationObserver | null = null;
     private injectTimeout: number | null = null;
 
-    async load(context: AlchemistContext): Promise<void> {
+    load(context: AlchemistContext): void {
         this.context = context;
         this.setupGlobalObserver();
         this.start();
     }
 
-    async unload(): Promise<void> {
+    unload(): void {
         this.stop();
     }
 
-    async onSettingsChange(newSettings: AlchemistSettings): Promise<void> {
+    onSettingsChange(newSettings: AlchemistSettings): void {
         const wasEnabled = this.context.settings.enableDataviewExport;
         this.context.settings = newSettings;
         

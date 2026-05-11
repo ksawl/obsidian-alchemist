@@ -42,7 +42,7 @@ export function stripTrackers(input: string): string {
                 return urlObj.toString();
             }
             return url;
-        } catch (_e) {
+        } catch {
             return url;
         }
     });

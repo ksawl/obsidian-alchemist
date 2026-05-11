@@ -16,9 +16,9 @@ export interface AlchemistContext {
 
 export interface IAlchemistModule {
     id: string;
-    load(context: AlchemistContext): Promise<void>;
-    unload(): Promise<void>;
-    onSettingsChange(newSettings: AlchemistSettings): Promise<void>;
+    load(context: AlchemistContext): void | Promise<void>;
+    unload(): void | Promise<void>;
+    onSettingsChange(newSettings: AlchemistSettings): void | Promise<void>;
 }
 
 export interface ISystemAdapter {
