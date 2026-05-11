@@ -53,3 +53,12 @@ Alchemist is a labor of love, dedicated to the pursuit of digital purity and kno
 ## License
 
 This project is licensed under the MIT License.
+
+---
+
+## Changelog
+
+### 0.1.0 (2026-05-11)
+- Initial submission to Obsidian Community Plugins.
+- Full codebase remediation for compliance and type safety.
+- Modular architecture with optional features (Audio, Dataview, TextBundle, Smart Paste).
