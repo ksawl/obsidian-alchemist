@@ -186,8 +186,9 @@ var AlchemistSettingTab = class extends import_obsidian.PluginSettingTab {
     containerEl.createEl("hr");
     const footer = containerEl.createDiv({ cls: "alchemist-settings-footer" });
     footer.createSpan({ text: "The alchemist: crafted with love by kharizma & latreia " });
+    footer.createSpan({ text: "\u{1F496} " });
     const donateLink = footer.createEl("a", {
-      text: "\u{1F496} Support development",
+      text: "Support development",
       href: "https://boosty.to/obsidian-alchemist"
     });
     donateLink.setAttr("target", "_blank");

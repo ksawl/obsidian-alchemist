@@ -359,8 +359,9 @@ export class AlchemistSettingTab extends PluginSettingTab {
         const footer = containerEl.createDiv({ cls: 'alchemist-settings-footer' });
         footer.createSpan({ text: 'The alchemist: crafted with love by kharizma & latreia ' });
         
+        footer.createSpan({ text: '💖 ' });
         const donateLink = footer.createEl('a', { 
-            text: '💖 Support development',
+            text: 'Support development',
             href: 'https://boosty.to/obsidian-alchemist'
         });
         donateLink.setAttr('target', '_blank');
