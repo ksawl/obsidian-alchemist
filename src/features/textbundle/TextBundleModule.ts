@@ -163,7 +163,9 @@ export class TextBundleModule implements IAlchemistModule {
             try {
                 const data = this.context.system.fs.readFileSync(filePath);
                 // Convert Node Buffer to ArrayBuffer
-                const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+                const ab = new ArrayBuffer(data.byteLength);
+                new Uint8Array(ab).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+                const arrayBuffer = ab;
                 await this.importer.importZip(arrayBuffer, targetPath, sourceName);
                 new Notice('Successfully imported textbundle');
             } catch (e) {

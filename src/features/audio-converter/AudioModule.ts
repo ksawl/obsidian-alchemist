@@ -241,7 +241,9 @@ export class AudioModule implements IAlchemistModule {
                             }
                             
                             const existingFile = app.vault.getAbstractFileByPath(finalVaultPath);
-                            const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+                            const ab = new ArrayBuffer(data.byteLength);
+                            new Uint8Array(ab).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+                            const arrayBuffer = ab;
                             if (existingFile instanceof TFile) {
                                 await app.vault.modifyBinary(existingFile, arrayBuffer);
                             } else {

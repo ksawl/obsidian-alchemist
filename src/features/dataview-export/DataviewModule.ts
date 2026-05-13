@@ -39,8 +39,8 @@ export class DataviewModule implements IAlchemistModule {
         this.observer = new MutationObserver(() => {
             if (!this.context.settings.enableDataviewExport) return;
             
-            if (this.injectTimeout) activeWindow.clearTimeout(this.injectTimeout);
-            this.injectTimeout = activeWindow.setTimeout(() => {
+            if (this.injectTimeout) window.clearTimeout(this.injectTimeout);
+            this.injectTimeout = window.setTimeout(() => {
                 this.injectAll();
             }, 300);
         });
@@ -57,7 +57,7 @@ export class DataviewModule implements IAlchemistModule {
         if (this.observer) {
             this.observer.disconnect();
         }
-        if (this.injectTimeout) activeWindow.clearTimeout(this.injectTimeout);
+        if (this.injectTimeout) window.clearTimeout(this.injectTimeout);
         activeDocument.querySelectorAll('.alchemist-export-btn').forEach(btn => btn.remove());
     }
 

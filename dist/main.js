@@ -1822,7 +1822,9 @@ var TextBundleModule = class {
       const sourceName = ((_a2 = filePath.split(/[\\/]/).pop()) == null ? void 0 : _a2.replace(/\.(zip|textpack|textbundle)$/i, "")) || "Imported_Note";
       try {
         const data = this.context.system.fs.readFileSync(filePath);
-        const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+        const ab = new ArrayBuffer(data.byteLength);
+        new Uint8Array(ab).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+        const arrayBuffer = ab;
         await this.importer.importZip(arrayBuffer, targetPath, sourceName);
         new import_obsidian5.Notice("Successfully imported textbundle");
       } catch (e) {
@@ -1999,8 +2001,8 @@ var DataviewModule = class {
   setupGlobalObserver() {
     this.observer = new MutationObserver(() => {
       if (!this.context.settings.enableDataviewExport) return;
-      if (this.injectTimeout) activeWindow.clearTimeout(this.injectTimeout);
-      this.injectTimeout = activeWindow.setTimeout(() => {
+      if (this.injectTimeout) window.clearTimeout(this.injectTimeout);
+      this.injectTimeout = window.setTimeout(() => {
         this.injectAll();
       }, 300);
     });
@@ -2015,7 +2017,7 @@ var DataviewModule = class {
     if (this.observer) {
       this.observer.disconnect();
     }
-    if (this.injectTimeout) activeWindow.clearTimeout(this.injectTimeout);
+    if (this.injectTimeout) window.clearTimeout(this.injectTimeout);
     activeDocument.querySelectorAll(".alchemist-export-btn").forEach((btn) => btn.remove());
   }
   injectAll() {
@@ -2302,7 +2304,9 @@ var AudioModule = class {
                   finalVaultPath = file.path.replace(new RegExp(`\\.${file.extension}$`), `.${format}`);
               }
               const existingFile = app.vault.getAbstractFileByPath(finalVaultPath);
-              const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+              const ab = new ArrayBuffer(data.byteLength);
+              new Uint8Array(ab).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+              const arrayBuffer = ab;
               if (existingFile instanceof import_obsidian8.TFile) {
                 await app.vault.modifyBinary(existingFile, arrayBuffer);
               } else {

@@ -24,7 +24,6 @@
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^16.11.21",
-    "builtin-modules": "^3.2.0",
     "electron": "^41.5.0",
     "esbuild": "^0.28.0",
     "eslint": "^9.39.4",
