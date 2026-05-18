@@ -1,6 +1,6 @@
 {
   "name": "alchemist",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Modular super-plugin for TextBundle, Audio conversion, and Dataview exports.",
   "main": "main.js",
   "scripts": {
